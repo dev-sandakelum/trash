@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌳 BST Deletion — Two Methods (Interactive Note)</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f1f5f9; --card:#ffffff; --text:#0f172a; --muted:#64748b;
+  --accent:#4f46e5; --accent2:#0d9488;
+  --nodeFill:#eef2ff; --nodeStroke:#6366f1; --edge:#94a3b8;
+  --codeBg:#0f172a; --codeText:#e2e8f0; --dot:#cbd5e1;
+}
+body.dark{
+  --bg:#0b1220; --card:#111a2e; --text:#e2e8f0; --muted:#94a3b8;
+  --nodeFill:#1e293b; --nodeStroke:#818cf8; --edge:#475569;
+  --codeBg:#020617; --dot:#334155;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  font-family:'Poppins',system-ui,sans-serif; background:var(--bg); color:var(--text);
+  transition:background .3s,color .3s; line-height:1.6;
+}
+.container{max-width:1020px; margin:0 auto; padding:20px;}
+header{
+  background:linear-gradient(135deg,#4f46e5,#0d9488);
+  color:#fff; padding:34px 20px; text-align:center; border-radius:0 0 26px 26px;
+  position:relative;
+}
+header h1{font-size:clamp(1.5rem,4vw,2.3rem); font-weight:800;}
+header p{opacity:.92; margin-top:6px;}
+#themeBtn{
+  position:absolute; top:14px; right:14px; background:rgba(255,255,255,.2);
+  border:none; border-radius:50%; width:42px; height:42px; font-size:20px;
+  cursor:pointer; transition:.2s;
+}
+#themeBtn:hover{background:rgba(255,255,255,.35); transform:scale(1.1);}
+section{margin:34px 0;}
+h2{
+  font-size:1.45rem; font-weight:800; margin-bottom:6px;
+  display:flex; align-items:center; gap:10px;
+}
+.sub{color:var(--muted); margin-bottom:16px; font-size:.95rem;}
+.card{
+  background:var(--card); border-radius:16px; padding:22px;
+  box-shadow:0 4px 18px rgba(0,0,0,.07); transition:background .3s;
+  animation:fadeUp .5s ease both;
+}
+@keyframes fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+.grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+@media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+/* --- 3 cases --- */
+.case{text-align:center; border-top:4px solid var(--accent);}
+.case .ico{font-size:2rem;}
+.case h3{margin:6px 0 4px; font-size:1.05rem;}
+.case p{font-size:.88rem; color:var(--muted);}
+.case.focus{border-top-color:#ef4444; background:linear-gradient(180deg,rgba(239,68,68,.07),transparent);}
+
+/* --- method cards --- */
+.mcard-big h3{color:var(--accent); margin-bottom:2px;}
+.mcard-big.alt h3{color:var(--accent2);}
+.badge{
+  display:inline-block; font-size:.72rem; font-weight:700; padding:3px 10px;
+  border-radius:99px; background:#eef2ff; color:#4f46e5; margin:4px 0 10px;
+}
+body.dark .badge{background:#312e81; color:#c7d2fe;}
+.mcard-big.alt .badge{background:#f0fdfa; color:#0d9488;}
+body.dark .mcard-big.alt .badge{background:#134e4a; color:#99f6e4;}
+.steps li{margin:5px 0 5px 18px; font-size:.9rem;}
+pre{
+  background:var(--codeBg); color:var(--codeText); border-radius:12px;
+  padding:14px; font-family:'JetBrains Mono',monospace; font-size:.8rem;
+  line-height:1.45; overflow-x:auto; margin-top:10px;
+}
+.r{color:#f87171; font-weight:700;} .g{color:#4ade80; font-weight:700;} .y{color:#fbbf24; font-weight:700;}
+.findbox{
+  background:rgba(79,70,229,.08); border-left:4px solid var(--accent);
+  padding:8px 12px; border-radius:0 10px 10px 0; font-size:.88rem; margin-top:12px;
+}
+.mcard-big.alt .findbox{background:rgba(13,148,136,.1); border-left-color:var(--accent2);}
+.findbox b{color:var(--accent);} .mcard-big.alt .findbox b{color:var(--accent2);}
+
+/* --- playground --- */
+.controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:14px;}
+.controls input[type=number]{
+  width:110px; padding:9px 12px; border-radius:10px; border:2px solid var(--edge);
+  background:var(--card); color:var(--text); font-family:inherit; font-size:.95rem;
+}
+.btn{
+  padding:9px 18px; border:none; border-radius:10px; font-family:inherit;
+  font-weight:700; cursor:pointer; transition:.2s; font-size:.9rem;
+}
+.btn:disabled{opacity:.45; cursor:not-allowed;}
+.btn.primary{background:var(--accent); color:#fff;}
+.btn.primary:hover:not(:disabled){transform:translateY(-2px); box-shadow:0 6px 14px rgba(79,70,229,.35);}
+.btn.danger{background:#ef4444; color:#fff;}
+.btn.danger:hover:not(:disabled){transform:translateY(-2px); box-shadow:0 6px 14px rgba(239,68,68,.35);}
+.btn.ghost{background:transparent; color:var(--muted); border:2px solid var(--edge);}
+.btn.ghost:hover:not(:disabled){color:var(--text); border-color:var(--text);}
+.method-pick{display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;}
+.pick{
+  flex:1; min-width:200px; border:2px solid var(--edge); border-radius:12px;
+  padding:10px 14px; cursor:pointer; display:flex; gap:10px; align-items:center;
+  transition:.2s; background:var(--card); font-size:.9rem;
+}
+.pick input{accent-color:var(--accent); width:17px; height:17px;}
+.pick:has(input:checked){border-color:var(--accent); background:#eef2ff; box-shadow:0 0 0 3px rgba(79,70,229,.15);}
+body.dark .pick:has(input:checked){background:#312e81;}
+.pick b{display:block; font-size:.95rem;} .pick small{color:var(--muted);}
+#treeWrap{
+  border:2px dashed var(--edge); border-radius:16px; padding:10px;
+  background-image:radial-gradient(circle, var(--dot) 1px, transparent 1px);
+  background-size:24px 24px; overflow:hidden;
+}
+svg{width:100%; height:auto; display:block;}
+.bst-node circle{fill:var(--nodeFill); stroke:var(--nodeStroke); stroke-width:3; transition:fill .3s,stroke .3s;}
+.bst-node text{fill:var(--text); font-weight:800; font-size:16px; text-anchor:middle; font-family:'Poppins',sans-serif;}
+.bst-node.target circle{fill:#fee2e2; stroke:#ef4444; animation:pulse 1s ease-in-out infinite;}
+body.dark .bst-node.target circle{fill:#7f1d1d;}
+.bst-node.path circle{fill:#fef3c7; stroke:#f59e0b;}
+body.dark .bst-node.path circle{fill:#78350f;}
+.bst-node.found circle{fill:#dcfce7; stroke:#16a34a;}
+body.dark .bst-node.found circle{fill:#14532d;}
+.bst-node.newly circle{fill:#ede9fe; stroke:#7c3aed;}
+body.dark .bst-node.newly circle{fill:#4c1d95;}
+.bst-node.selected circle{stroke:#4f46e5; stroke-width:6;}
+@keyframes pulse{0%,100%{stroke-width:3;} 50%{stroke-width:8;}}
+.edge{stroke:var(--edge); stroke-width:2.5; stroke-linecap:round; transition:stroke .3s;}
+.edge.pathedge{stroke:#f59e0b; stroke-width:4;}
+.copyVal{font-size:18px; font-weight:800; fill:#4f46e5; text-anchor:middle;
+  transition:transform .75s cubic-bezier(.4,0,.2,1), opacity .75s; pointer-events:none;}
+.empty{fill:var(--muted); font-size:20px; text-anchor:middle; font-family:'Poppins',sans-serif;}
+.legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:10px; font-size:.8rem; color:var(--muted);}
+.dot{display:inline-block; width:13px; height:13px; border-radius:50%; margin-right:5px; vertical-align:-2px;}
+.log{
+  background:#0f172a; color:#cbd5e1; border-radius:12px; padding:12px 14px;
+  font-family:'JetBrains Mono',monospace; font-size:.78rem; max-height:190px;
+  overflow-y:auto; margin-top:14px;
+}
+.log .ok{color:#4ade80;} .log .err{color:#f87171;} .log .info{color:#67e8f9;}
+.chip{
+  background:var(--card); border:2px solid var(--edge); color:var(--text);
+  border-radius:99px; padding:5px 14px; cursor:pointer; font-family:inherit;
+  font-size:.8rem; font-weight:600; transition:.2s;
+}
+.chip:hover:not(:disabled){border-color:var(--accent); color:var(--accent);}
+.chip:disabled{opacity:.45; cursor:not-allowed;}
+select{padding:8px; border-radius:10px; border:2px solid var(--edge); background:var(--card); color:var(--text); font-family:inherit;}
+
+/* --- table --- */
+table{width:100%; border-collapse:collapse; font-size:.9rem;}
+th,td{padding:11px 14px; text-align:left; border-bottom:1px solid var(--edge);}
+th{background:#eef2ff; color:#3730a3; font-size:.82rem; text-transform:uppercase; letter-spacing:.5px;}
+body.dark th{background:#1e1b4b; color:#c7d2fe;}
+tr:hover td{background:rgba(79,70,229,.05);}
+
+/* --- mnemonic --- */
+.mnemo{border-left:5px solid #f59e0b; background:rgba(245,158,11,.1); padding:14px 18px; border-radius:0 12px 12px 0; margin-top:14px; font-size:.95rem;}
+
+/* --- quiz --- */
+.quiz{border-left:4px solid var(--accent2);}
+.quiz p.q{font-weight:600; margin-bottom:12px;}
+.opts{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+@media(max-width:600px){.opts{grid-template-columns:1fr;}}
+.opt{
+  padding:10px 14px; border-radius:10px; border:2px solid var(--edge);
+  background:var(--card); color:var(--text); cursor:pointer; font-family:inherit;
+  font-size:.87rem; text-align:left; transition:.2s;
+}
+.opt:hover:not(:disabled){border-color:var(--accent2); transform:translateX(4px);}
+.opt.right{background:#dcfce7; border-color:#16a34a; font-weight:700;}
+body.dark .opt.right{background:#14532d;}
+.opt.wrong{background:#fee2e2; border-color:#ef4444;}
+body.dark .opt.wrong{background:#7f1d1d;}
+.exp{display:none; margin-top:12px; padding:10px 14px; background:rgba(13,148,136,.1);
+  border-radius:10px; font-size:.85rem;}
+.exp.show{display:block; animation:fadeUp .4s ease;}
+footer{text-align:center; color:var(--muted); font-size:.85rem; padding:26px 0 10px;}
+</style>
+</head>
+<body>
+
+<header>
+  <button id="themeBtn" title="Toggle dark mode">🌙</button>
+  <h1>🌳 Deleting a Node from a Binary Search Tree</h1>
+  <p>The Two Replacement Methods — In-order Successor &amp; In-order Predecessor</p>
+</header>
+
+<div class="container">
+
+  <!-- INTRO -->
+  <section class="card">
+    <h2>📖 First: The 3 Cases of Deletion</h2>
+    <p class="sub">Difficulty depends on how many children the node has:</p>
+    <div class="grid3">
+      <div class="card case"><div class="ico">🍃</div><h3>Case 1: Leaf</h3><p>No children → just remove it. Easy!</p></div>
+      <div class="card case"><div class="ico">🪜</div><h3>Case 2: One Child</h3><p>Replace the node with its only child.</p></div>
+      <div class="card case focus"><div class="ico">🌿</div><h3>Case 3: Two Children ⭐</h3><p>Can't just remove it — we <b>replace its value</b> using one of the two methods below!</p></div>
+    </div>
+  </section>
+
+  <!-- TWO METHODS -->
+  <section>
+    <h2>⚖️ The Two Methods</h2>
+    <p class="sub">Both keep the tree a valid BST — the in-order (sorted) sequence never changes.</p>
+    <div class="grid2">
+
+      <div class="card mcard-big">
+        <h3>🟢 Method 1 — In-order Successor</h3>
+        <span class="badge">smallest node in the RIGHT subtree</span>
+        <ol class="steps">
+          <li>Go to the <b>right subtree</b> of the target</li>
+          <li>Keep going <b>LEFT</b> until there is no left child</li>
+          <li>Copy that value into the target, then delete it</li>
+        </ol>
+        <div class="findbox">🧭 <b>How to find:</b> One step <b>RIGHT</b> ➜ then all the way <b>LEFT</b></div>
+<pre>DELETE 50 (successor = <span class="g">60</span>)
+
+BEFORE                 AFTER
+      <span class="r">50</span> ←delete            <span class="g">60</span> ←copied
+     /  \                 /  \
+   30    70             30    70
+  /  \   / \           /  \     \
+20   40 <span class="y">60</span>  80       20   40    80
+       ↑
+   smallest in
+   right subtree</pre>
+      </div>
+
+      <div class="card mcard-big alt">
+        <h3>🔵 Method 2 — In-order Predecessor</h3>
+        <span class="badge">largest node in the LEFT subtree</span>
+        <ol class="steps">
+          <li>Go to the <b>left subtree</b> of the target</li>
+          <li>Keep going <b>RIGHT</b> until there is no right child</li>
+          <li>Copy that value into the target, then delete it</li>
+        </ol>
+        <div class="findbox">🧭 <b>How to find:</b> One step <b>LEFT</b> ➜ then all the way <b>RIGHT</b></div>
+<pre>DELETE 50 (predecessor = <span class="g">40</span>)
+
+BEFORE                 AFTER
+      <span class="r">50</span> ←delete            <span class="g">40</span> ←copied
+     /  \                 /  \
+   30    70             30    70
+  /  \   / \           /     /  \
+20  <span class="y">40</span>  60  80       20     60   80
+    ↑
+   largest in
+   left subtree</pre>
+      </div>
+
+    </div>
+    <div class="mnemo">💡 <b>Memory trick:</b> <b>S</b>uccessor = <b>R</b>ight ➜ <b>L</b>eft, left, left… &nbsp;|&nbsp; <b>P</b>redecessor = <b>L</b>eft ➜ <b>R</b>ight, right, right…<br>Why does the replacement always have ≤ 1 child? Because we walked <i>all the way</i> in one direction — there's nothing left on that side!</div>
+  </section>
+
+  <!-- PLAYGROUND -->
+  <section class="card">
+    <h2>🎮 Interactive Playground</h2>
+    <p class="sub">Click a node to select it (or type a value), pick a method, then press <b>Delete</b> to watch the animation. Nodes: <b id="nodeCount">0</b></p>
+
+    <div class="method-pick">
+      <label class="pick"><input type="radio" name="method" value="successor" checked>
+        <span><b>🟢 In-order Successor</b><small>right subtree → keep left</small></span></label>
+      <label class="pick"><input type="radio" name="method" value="predecessor">
+        <span><b>🔵 In-order Predecessor</b><small>left subtree → keep right</small></span></label>
+    </div>
+
+    <div class="controls">
+      <input type="number" id="valInput" placeholder="Value…">
+      <button class="btn primary" id="insertBtn">➕ Insert</button>
+      <button class="btn danger" id="deleteBtn">🗑️ Delete</button>
+      <button class="btn ghost" id="resetBtn">🔄 Reset</button>
+      <select id="speedSel" title="Animation speed">
+        <option value="1.5">🐢 Slow</option>
+        <option value="1" selected>🚶 Normal</option>
+        <option value="0.5">🐇 Fast</option>
+      </select>
+    </div>
+
+    <div class="controls">
+      <span style="font-size:.85rem; color:var(--muted)">Quick try:</span>
+      <button class="chip" data-v="50">Delete 50 (root, 2 children)</button>
+      <button class="chip" data-v="30">Delete 30</button>
+      <button class="chip" data-v="20">Delete 20 (leaf)</button>
+      <span style="font-size:.8rem; color:var(--muted)">Tip: insert <b>35</b>, then delete <b>30</b> to see a multi-step walk!</span>
+    </div>
+
+    <div id="treeWrap"><svg id="treeSvg" viewBox="0 0 700 360"></svg></div>
+
+    <div class="legend">
+      <span><span class="dot" style="background:#ef4444"></span>Target to delete</span>
+      <span><span class="dot" style="background:#f59e0b"></span>Search path</span>
+      <span><span class="dot" style="background:#16a34a"></span>Successor / Predecessor found</span>
+      <span><span class="dot" style="background:#7c3aed"></span>Recently changed</span>
+    </div>
+
+    <div class="log" id="log"></div>
+  </section>
+
+  <!-- COMPARISON -->
+  <section class="card">
+    <h2>📊 Comparison Table</h2>
+    <table>
+      <tr><th>Feature</th><th>🟢 Successor</th><th>🔵 Predecessor</th></tr>
+      <tr><td>Comes from</td><td><b>Right</b> subtree</td><td><b>Left</b> subtree</td></tr>
+      <tr><td>Which node?</td><td>Smallest value</td><td>Largest value</td></tr>
+      <tr><td>Direction</td><td>Right once → left, left…</td><td>Left once → right, right…</td></tr>
+      <tr><td>In-order meaning</td><td>Next value in sorted order</td><td>Previous value in sorted order</td></tr>
+      <tr><td>Children of replacement</td><td colspan="2" style="text-align:center">At most <b>one</b> child → always easy to remove ✔️</td></tr>
+      <tr><td>Result</td><td colspan="2" style="text-align:center">Both produce a valid BST with the <b>same sorted order</b> ✅</td></tr>
+    </table>
+  </section>
+
+  <!-- QUIZ -->
+  <section>
+    <h2>🧠 Test Yourself</h2>
+    <p class="sub">Click an answer — instant feedback!</p>
+
+    <div class="card quiz" data-exp="The successor is the NEXT value in sorted order — the smallest node of the right subtree (go right once, then keep going left).">
+      <p class="q">1️⃣ The in-order successor of a node with two children is…</p>
+      <div class="opts">
+        <button class="opt" data-c="0">The largest node in the left subtree</button>
+        <button class="opt" data-c="1">The smallest node in the right subtree</button>
+        <button class="opt" data-c="0">The root of the tree</button>
+        <button class="opt" data-c="0">Any leaf node</button>
+      </div>
+      <div class="exp"></div>
+    </div>
+
+    <div class="card quiz" data-exp="Predecessor = PREVIOUS value in sorted order — go LEFT once, then keep going RIGHT as far as possible.">
+      <p class="q">2️⃣ To find the in-order predecessor, you…</p>
+      <div class="opts">
+        <button class="opt" data-c="0">Go right once, then keep going left</button>
+        <button class="opt" data-c="1">Go left once, then keep going right</button>
+        <button class="opt" data-c="0">Always start at the root</button>
+        <button class="opt" data-c="0">Delete the left child first</button>
+      </div>
+      <div class="exp"></div>
+    </div>
+
+    <div class="card quiz" data-exp="Because we travel as far as possible in ONE direction, that node has no child on that side — so it has at most one child, making it easy to delete.">
+      <p class="q">3️⃣ The replacement node (successor or predecessor) can have…</p>
+      <div class="opts">
+        <button class="opt" data-c="0">Two children</button>
+        <button class="opt" data-c="0">Exactly one child, always</button>
+        <button class="opt" data-c="1">At most one child</button>
+        <button class="opt" data-c="0">Any number of children</button>
+      </div>
+      <div class="exp"></div>
+    </div>
+
+    <div class="card quiz" data-exp="In-order traversal of a BST visits nodes in ascending sorted order — that's exactly why 'in-order successor/predecessor' get their names.">
+      <p class="q">4️⃣ Which traversal of a BST outputs values in sorted order?</p>
+      <div class="opts">
+        <button class="opt" data-c="0">Pre-order</button>
+        <button class="opt" data-c="0">Post-order</button>
+        <button class="opt" data-c="1">In-order</button>
+        <button class="opt" data-c="0">Level-order</button>
+      </div>
+      <div class="exp"></div>
+    </div>
+  </section>
+
+  <footer>Made for your DSA notes 🌳 • Delete → Replace → Stay Sorted</footer>
+</div>
+
+<script>
+const svgNS='http://www.w3.org/2000/svg';
+let root=null, selectedValue=null, animating=false, speedFactor=1;
+const layout=new Map(), STEP=900;
+const sleep=(m=1)=>new Promise(r=>setTimeout(r,STEP*m*speedFactor));
+const mk=v=>({value:v,left:null,right:null});
+
+function log(msg,type=''){
+  const box=document.getElementById('log');
+  const d=document.createElement('div');
+  d.className=type; d.textContent=msg;
+  box.appendChild(d); box.scrollTop=box.scrollHeight;
+}
+function countChildren(n){let c=0; if(n.left)c++; if(n.right)c++; return c;}
+function findNode(v){
+  let cur=root,parent=null;
+  while(cur&&cur.value!==v){parent=cur; cur=v<cur.value?cur.left:cur.right;}
+  return {node:cur,parent};
+}
+function removeRef(node,parent){
+  const child=node.left||node.right||null;
+  if(!parent)root=child;
+  else if(parent.left===node)parent.left=child;
+  else parent.right=child;
+  node.left=node.right=null;
+}
+
+function render(opts={}){
+  const {targetNode=null,pathNodes=[],foundNode=null,newly=[]}=opts;
+  const svg=document.getElementById('treeSvg');
+  svg.innerHTML=''; layout.clear();
+  const newlySet=new Set(newly);
+
+  if(!root){
+    svg.setAttribute('viewBox','0 0 700 200');
+    const t=document.createElementNS(svgNS,'text');
+    t.setAttribute('x',350); t.setAttribute('y',100);
+    t.setAttribute('class','empty');
+    t.textContent='Tree is empty — insert some values! 🌱';
+    svg.appendChild(t);
+    document.getElementById('nodeCount').textContent=0;
+    return;
+  }
+  let idx=0,maxD=0;
+  (function walk(n,d){ if(!n)return; walk(n.left,d+1); n._idx=idx++; n._d=d; if(d>maxD)maxD=d; walk(n.right,d+1); })(root,0);
+  const count=idx;
+  const W=Math.max(620,count*84+80);
+  const gap=count>1?(W-110)/(count-1):0;
+  (function place(n){ if(!n)return; place(n.left);
+    n._x=count>1?55+n._idx*gap:W/2; n._y=44+n._d*80; place(n.right); })(root);
+  const H=44+maxD*80+64;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+
+  const nodes=[],edges=[];
+  (function collect(n,p){ if(!n)return; nodes.push(n); if(p)edges.push([p,n]);
+    collect(n.left,n); collect(n.right,n); })(root,null);
+
+  for(const [p,c] of edges){
+    const l=document.createElementNS(svgNS,'line');
+    l.setAttribute('x1',p._x); l.setAttribute('y1',p._y);
+    l.setAttribute('x2',c._x); l.setAttribute('y2',c._y);
+    l.setAttribute('class','edge'+((pathNodes.includes(p)&&pathNodes.includes(c))?' pathedge':''));
+    svg.appendChild(l);
+  }
+  for(const nd of nodes){
+    layout.set(nd.value,{x:nd._x,y:nd._y});
+    const g=document.createElementNS(svgNS,'g');
+    let cls='bst-node';
+    if(nd===targetNode)cls+=' target';
+    else if(nd===foundNode)cls+=' found';
+    else if(pathNodes.includes(nd))cls+=' path';
+    if(newlySet.has(nd.value))cls+=' newly';
+    if(nd.value===selectedValue)cls+=' selected';
+    g.setAttribute('class',cls);
+    g.setAttribute('transform',`translate(${nd._x},${nd._y})`);
+    const c=document.createElementNS(svgNS,'circle'); c.setAttribute('r',23);
+    const t=document.createElementNS(svgNS,'text'); t.textContent=nd.value; t.setAttribute('y',6);
+    g.appendChild(c); g.appendChild(t);
+    g.style.cursor='pointer';
+    g.addEventListener('click',()=>{
+      if(animating)return;
+      selectedValue=(selectedValue===nd.value?null:nd.value);
+      render();
+      log(selectedValue?`👆 Selected node ${nd.value}`:'Selection cleared');
+    });
+    svg.appendChild(g);
+  }
+  document.getElementById('nodeCount').textContent=count;
+}
+
+function animateCopy(fromV,toV){
+  return new Promise(res=>{
+    const a=layout.get(fromV), b=layout.get(toV);
+    const svg=document.getElementById('treeSvg');
+    const t=document.createElementNS(svgNS,'text');
+    t.setAttribute('class','copyVal'); t.textContent=fromV;
+    t.setAttribute('x',a.x); t.setAttribute('y',a.y+6);
+    svg.appendChild(t);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      t.style.transform=`translate(${b.x-a.x}px,${b.y-a.y}px)`;
+      t.style.opacity='.15';
+    }));
+    setTimeout(()=>{t.remove(); res();},780);
+  });
+}
+
+function setControls(on){
+  ['valInput','insertBtn','deleteBtn','resetBtn','speedSel'].forEach(id=>document.getElementById(id).disabled=!on);
+  document.querySelectorAll('input[name="method"]').forEach(r=>r.disabled=!on);
+  document.querySelectorAll('.chip').forEach(b=>b.disabled=!on);
+}
+
+function doInsert(){
+  if(animating)return;
+  const inp=document.getElementById('valInput');
+  const v=parseInt(inp.value,10);
+  if(isNaN(v)){log('⚠️ Type a number to insert','err'); return;}
+  if(findNode(v).node){log(`⚠️ ${v} already exists in the tree`,'err'); return;}
+  if(!root){root=mk(v); render({newly:[v]}); log(`➕ Inserted ${v} as root`,'ok'); inp.value=''; return;}
+  let cur=root; const trail=[];
+  while(true){
+    trail.push(cur.value);
+    if(v<cur.value){ if(!cur.left){cur.left=mk(v); break;} cur=cur.left; }
+    else{ if(!cur.right){cur.right=mk(v); break;} cur=cur.right; }
+  }
+  render({newly:[v]});
+  log(`➕ Inserted ${v}  (path: ${trail.join(' → ')} → ${v})`,'ok');
+  inp.value='';
+}
+
+function doDelete(){
+  if(animating)return;
+  const inp=document.getElementById('valInput');
+  let v=parseInt(inp.value,10);
+  if(isNaN(v))v=selectedValue;
+  if(v==null){log('⚠️ Click a node or type a value first','err'); return;}
+  deleteAnimated(v);
+}
+
+async function deleteAnimated(v){
+  animating=true; setControls(false);
+  const {node:target,parent:tp}=findNode(v);
+  if(!target){log(`❌ ${v} not found in the tree`,'err'); animating=false; setControls(true); return;}
+  selectedValue=null;
+  log(`──────── Deleting ${v} ────────`,'info');
+  render({targetNode:target});
+  log(`🎯 Step 0: Target node ${v} highlighted`);
+  await sleep();
+
+  const kids=countChildren(target);
+  if(kids===0){
+    log(`🍃 Case 1: it's a LEAF → just remove it`);
+    await sleep(.7);
+    removeRef(target,tp); render();
+    log(`✅ ${v} deleted — tree still a valid BST!`,'ok');
+  } else if(kids===1){
+    const child=target.left||target.right;
+    log(`🪜 Case 2: ONE child (${child.value}) → child takes its place`);
+    await sleep(.7);
+    removeRef(target,tp); render({newly:[child.value]});
+    log(`✅ ${v} deleted, replaced by ${child.value}.`,'ok');
+  } else {
+    const succ=document.querySelector('input[name="method"]:checked').value==='successor';
+    log(`🌿 Case 3: TWO children → replace with ${succ?'in-order SUCCESSOR':'in-order PREDECESSOR'}`,'info');
+    await sleep();
+    let cur=succ?target.right:target.left, par=target;
+    render({targetNode:target,pathNodes:[cur]});
+    log(`👉 Step 1: Go to the ${succ?'RIGHT':'LEFT'} subtree → node ${cur.value}`);
+    await sleep();
+    while(succ?cur.left:cur.right){
+      par=cur; cur=succ?cur.left:cur.right;
+      render({targetNode:target,pathNodes:[cur]});
+      log(`↪️ Step 2: Keep going ${succ?'LEFT ⬅️':'RIGHT ➡️'} → ${cur.value}`);
+      await sleep();
+    }
+    render({targetNode:target,foundNode:cur});
+    log(`✅ Step 3: ${succ?'Successor':'Predecessor'} found = ${cur.value} (it has ≤ 1 child → easy to remove)`,'ok');
+    await sleep();
+    log(`📋 Step 4: Copy ${cur.value} into the target node…`);
+    await animateCopy(cur.value,v);
+    target.value=cur.value;
+    render({foundNode:target});
+    await sleep(.5);
+    removeRef(cur,par);
+    render({newly:[cur.value]});
+    log(`🗑️ Step 5: Delete the old ${succ?'successor':'predecessor'} node`);
+    await sleep(.7);
+    log(`🎉 Done! ${v} was replaced by ${cur.value}. In-order traversal is still sorted!`,'ok');
+  }
+  await sleep(.4);
+  selectedValue=null; render();
+  animating=false; setControls(true);
+}
+
+function reset(){
+  root=null;
+  [50,30,70,20,40,60,80].forEach(v=>{
+    if(!root){root=mk(v); return;}
+    let cur=root;
+    while(true){
+      if(v<cur.value){ if(!cur.left){cur.left=mk(v); break;} cur=cur.left; }
+      else{ if(!cur.right){cur.right=mk(v); break;} cur=cur.right; }
+    }
+  });
+  selectedValue=null; render();
+  document.getElementById('log').innerHTML='';
+  log('🔄 Sample tree loaded: 50, 30, 70, 20, 40, 60, 80');
+  log('👆 Click a node → choose a method → press Delete','info');
+}
+
+document.getElementById('insertBtn').addEventListener('click',doInsert);
+document.getElementById('deleteBtn').addEventListener('click',doDelete);
+document.getElementById('resetBtn').addEventListener('click',reset);
+document.getElementById('valInput').addEventListener('keydown',e=>{if(e.key==='Enter')doInsert();});
+document.getElementById('speedSel').addEventListener('change',e=>speedFactor=parseFloat(e.target.value));
+document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
+  if(!animating){selectedValue=null; deleteAnimated(parseInt(b.dataset.v,10));}
+}));
+document.getElementById('themeBtn').addEventListener('click',()=>{
+  document.body.classList.toggle('dark');
+  document.getElementById('themeBtn').textContent=document.body.classList.contains('dark')?'☀️':'🌙';
+});
+document.querySelectorAll('.quiz').forEach(q=>{
+  q.querySelectorAll('.opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(q.classList.contains('done'))return;
+      q.classList.add('done');
+      const correct=btn.dataset.c==='1';
+      btn.classList.add(correct?'right':'wrong');
+      q.querySelectorAll('.opt').forEach(b=>{if(b.dataset.c==='1')b.classList.add('right'); b.disabled=true;});
+      const exp=q.querySelector('.exp');
+      exp.textContent=(correct?'✅ Correct! ':'❌ Not quite. ')+q.dataset.exp;
+      exp.classList.add('show');
+    });
+  });
+});
+reset();
+</script>
+</body>
+</html>

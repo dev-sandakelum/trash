@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Binary Search Tree — Field Notes, Sheet № 2</title>
+<meta name="description" content="An interactive field guide to the binary search tree: the ordering property, search, insertion, deletion, balance — and the four tree traversals (preorder, inorder, postorder, level-order), playable step by step.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4EEDC; --paper2:#ECE4CC; --ink:#253020;
+  --olive:#6E6A45; --faint:#98926B; --line:#CFC7A6;
+  --rust:#A2482A; --rust-soft:#EBD6C5;
+  --green:#3F6B48; --green-soft:#DBE2C9;
+  --ochre:#A87B1F; --ochre-soft:#EFDFB4;
+  --mono:'JetBrains Mono',monospace;
+  --serif:'Newsreader',Georgia,serif;
+  --disp:'Fraunces','Newsreader',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:var(--serif); font-size:17px; line-height:1.62;
+  border-top:5px solid var(--ink); -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:""; position:fixed; inset:0; z-index:60; pointer-events:none;
+  mix-blend-mode:multiply; opacity:.9;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+}
+::selection{background:var(--ochre-soft)}
+:focus-visible{outline:2px solid var(--rust); outline-offset:3px}
+.page{max-width:1120px; margin:0 auto; padding:0 40px}
+section,article.entry{scroll-margin-top:24px}
+
+/* ---------- side rail ---------- */
+.rail{position:fixed; left:26px; top:50%; transform:translateY(-50%);
+  border-left:1px solid var(--line); padding-left:14px;
+  font:400 10.5px/1.95 var(--mono); z-index:10}
+.rail a{display:block; color:var(--faint); text-decoration:none; white-space:nowrap; transition:color .2s}
+.rail a::before{content:"·"; opacity:0; margin-right:7px}
+.rail a:hover{color:var(--ink)}
+.rail a.active{color:var(--rust)}
+.rail a.active::before{opacity:1}
+.rail .rh{font:700 9px var(--mono); letter-spacing:.18em; text-transform:uppercase;
+  color:var(--faint); margin:12px 0 3px}
+.rail .rh:first-child{margin-top:0}
+@media (max-width:1330px){.rail{display:none}}
+
+/* ---------- masthead ---------- */
+.masthead{position:relative; padding:64px 0 34px; border-bottom:1px solid var(--line)}
+.overline{display:flex; align-items:center; gap:16px;
+  font:500 11px/1 var(--mono); letter-spacing:.24em; text-transform:uppercase; color:var(--olive)}
+.overline::before,.overline::after{content:""; flex:1; height:1px; background:var(--line)}
+.overline span{white-space:nowrap}
+h1{font-family:var(--disp); font-weight:600; font-size:clamp(50px,7.6vw,88px);
+  line-height:.95; letter-spacing:-.015em; margin:26px 0 10px}
+h1 em{font-style:italic; font-weight:500}
+.sub{font-style:italic; font-size:clamp(17px,2.4vw,21px); color:var(--olive); max-width:58ch}
+.meta{display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:26px;
+  font:400 12px/1.6 var(--mono); color:var(--ink)}
+.meta i{color:var(--faint); font-style:normal}
+.sprig{position:absolute; right:16px; top:36px; width:150px; transform:rotate(7deg); opacity:.95}
+.sprig .stem{stroke:var(--ink); stroke-width:2; fill:none; stroke-linecap:round}
+.sprig .leaf{fill:var(--green-soft); stroke:var(--ink); stroke-width:1.3}
+.sprig .leaf.big{fill:var(--rust-soft)}
+@media (max-width:860px){.sprig{display:none}}
+
+/* ---------- intro ---------- */
+.intro{padding:40px 0 6px; max-width:74ch}
+.intro p+p{margin-top:16px}
+.intro p:first-of-type::first-letter{
+  font-family:var(--disp); font-weight:600; font-size:58px; float:left;
+  line-height:.82; padding:6px 10px 0 0; color:var(--rust)}
+.hint{margin-top:20px; padding-left:16px; border-left:3px solid var(--rust);
+  font-style:italic; font-size:15.5px; color:var(--olive)}
+
+/* ---------- part bands ---------- */
+.part{margin:88px 0 8px; display:grid; grid-template-columns:96px 1fr; gap:26px;
+  align-items:start; border-top:2px solid var(--ink); padding-top:18px}
+.part .pn{font-family:var(--disp); font-style:italic; font-weight:500;
+  font-size:64px; line-height:.8; color:var(--rust)}
+.part h2{font-family:var(--disp); font-weight:600; font-size:clamp(26px,3.4vw,34px); letter-spacing:-.01em}
+.part p{margin-top:8px; font-style:italic; color:var(--olive); max-width:66ch; font-size:16px}
+@media (max-width:600px){.part{grid-template-columns:1fr; gap:8px}.part .pn{font-size:44px}}
+
+/* ---------- section headers ---------- */
+.sec{margin-top:74px}
+.sec-head{display:flex; justify-content:space-between; align-items:baseline; gap:20px;
+  border-top:2px solid var(--ink); padding-top:12px; margin-bottom:26px}
+.sec-tag{font:700 12px/1 var(--mono); letter-spacing:.2em; text-transform:uppercase}
+.sec-tag .mark{color:var(--rust); margin-right:6px}
+.sec-note{font:italic 15px var(--serif); color:var(--olive); text-align:right}
+
+/* ---------- boards ---------- */
+.spec-grid{display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:24px; align-items:start}
+.board{border:1.5px solid var(--ink); background:var(--paper);
+  box-shadow:7px 7px 0 rgba(37,48,32,.09)}
+.tree-wrap{padding:16px 10px 6px}
+.caption{display:flex; gap:14px; align-items:flex-start; border-top:1px solid var(--line);
+  padding:11px 14px; font:400 12.5px/1.55 var(--mono); min-height:54px}
+.caption span{flex:1}
+.caption.pulse span{animation:pulsebg .9s ease}
+@keyframes pulsebg{0%{background:var(--ochre-soft)}100%{background:transparent}}
+.clear{font:600 11px var(--mono); letter-spacing:.08em; text-transform:uppercase;
+  color:var(--rust); background:none; border:1px solid var(--rust);
+  padding:4px 10px; cursor:pointer; flex-shrink:0; margin-top:2px}
+.clear:hover{background:var(--rust); color:var(--paper)}
+.legend{display:flex; flex-wrap:wrap; gap:6px 18px; padding:9px 14px 12px;
+  border-top:1px solid var(--line); font:400 11px var(--mono); color:var(--olive)}
+.lg{display:flex; align-items:center; gap:7px}
+.sw{width:12px; height:12px; border-radius:50%; flex-shrink:0}
+.sw-sel{background:var(--rust)}
+.sw-path{background:var(--ochre-soft); border:2px solid var(--ochre)}
+.sw-min{background:var(--green-soft); border:2px solid var(--green)}
+.sw-max{background:var(--rust-soft); border:2px solid var(--rust)}
+.sw-cur{background:transparent; border:2px dashed var(--rust)}
+.sw-vis{background:var(--green-soft); border:2px solid var(--green)}
+.sw-ghost{background:transparent; border:1.5px dashed var(--ochre)}
+
+/* ---------- operations bench ---------- */
+.bench{display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px;
+  padding:10px 14px; border-top:1px solid var(--line);
+  font:400 12px var(--mono); transition:opacity .2s}
+.bench.busy{opacity:.45; pointer-events:none}
+.blab{font:700 10px var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--olive)}
+.bench input{width:78px; font:600 14px var(--mono); background:var(--paper);
+  border:1.5px solid var(--ink); color:var(--ink); padding:5px 8px; text-align:center}
+.bench input:focus{outline:2px solid var(--rust); outline-offset:1px}
+.bbtn{font:700 11px var(--mono); letter-spacing:.1em; text-transform:uppercase;
+  border:1.5px solid var(--ink); background:none; color:var(--ink);
+  padding:6px 12px; cursor:pointer; transition:.15s}
+.bbtn:hover{background:var(--ink); color:var(--paper)}
+.bbtn.rust{border-color:var(--rust); color:var(--rust)}
+.bbtn.rust:hover{background:var(--rust); color:var(--paper)}
+.bdiv{width:1px; height:22px; background:var(--line); margin:0 4px}
+.preset{font:600 11.5px var(--mono); background:none; border:none;
+  border-bottom:1px dashed var(--rust); color:var(--rust); cursor:pointer; padding:2px 1px}
+.preset:hover{background:var(--rust); color:var(--paper)}
+
+/* ---------- inspector ---------- */
+.inspector{padding:18px 20px 14px; border:1.5px solid var(--ink); background:var(--paper);
+  box-shadow:7px 7px 0 rgba(37,48,32,.09)}
+.insp-tag{font:700 10.5px var(--mono); letter-spacing:.18em; text-transform:uppercase; color:var(--rust)}
+.insp-h{font-family:var(--disp); font-size:23px; font-weight:600; margin:8px 0 2px}
+.insp-h em{font:italic 400 15px var(--serif); color:var(--ochre); margin-left:8px}
+.insp-note{font-style:italic; font-size:14.5px; color:var(--olive); margin:6px 0 12px}
+.node-head{display:flex; align-items:center; gap:14px; margin:10px 0 12px}
+.node-dot{width:52px; height:52px; border-radius:50%; background:var(--rust); color:var(--paper);
+  font-family:var(--disp); font-size:24px; font-weight:600; display:flex;
+  align-items:center; justify-content:center; flex-shrink:0;
+  box-shadow:2.5px 2.5px 0 rgba(37,48,32,.25)}
+.node-role{font-style:italic; font-size:14.5px; color:var(--olive); line-height:1.35}
+.kv{display:grid; grid-template-columns:96px 1fr; gap:10px;
+  padding:7px 0; border-top:1px dotted var(--line); align-items:baseline}
+.k{font:600 10.5px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--olive)}
+.v{font-size:15px; line-height:1.55}
+.v .mut{font-style:italic; color:var(--faint); font-size:13.5px}
+.chip{font:500 12.5px var(--mono); background:transparent; border:1px solid var(--ink);
+  color:var(--ink); padding:1px 8px; margin:2px 4px 2px 0; cursor:pointer; transition:.15s}
+.chip:hover{background:var(--ink); color:var(--paper)}
+.none{font-style:italic; color:var(--faint); font-size:14px}
+.delbtn{margin-top:14px; width:100%; font:700 11px var(--mono); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--rust); background:none;
+  border:1.5px dashed var(--rust); padding:9px 10px; cursor:pointer; transition:.15s}
+.delbtn:hover{background:var(--rust); color:var(--paper); border-style:solid}
+
+/* ---------- the tree SVG ---------- */
+.tree{display:block; width:100%; height:auto}
+.tree text{user-select:none}
+.tree .guide{stroke:var(--line); stroke-width:1; stroke-dasharray:2 7; transition:stroke .3s}
+.tree .gl{font:11px var(--mono); fill:var(--faint); transition:fill .3s}
+.tree.emph-guides .guide{stroke:var(--ochre)}
+.tree.emph-guides .gl{fill:var(--ochre)}
+.tree .edge{
+  stroke:var(--ink); stroke-opacity:.4; stroke-width:2; fill:none; stroke-linecap:round;
+  stroke-dasharray:1 1; stroke-dashoffset:1;
+  transition:stroke-dashoffset .8s cubic-bezier(.55,0,.2,1),
+             stroke .25s, stroke-opacity .25s, stroke-width .25s, opacity .35s;
+}
+.tree.entering .edge{transition-delay:var(--dl,0s)}
+.tree.grown .edge{stroke-dashoffset:0}
+.tree.settled .edge{transition:stroke .25s, stroke-opacity .25s, stroke-width .25s, opacity .35s}
+.edge.hl-path{stroke:var(--rust); stroke-opacity:1; stroke-width:3.4}
+.edge.hl-min{stroke:var(--green); stroke-opacity:1; stroke-width:3}
+.edge.hl-max{stroke:var(--rust); stroke-opacity:1; stroke-width:3}
+
+.tree .n{cursor:default; transition:opacity .4s}
+.tree.interactive .n{cursor:pointer}
+.tree.interactive.grown .n:hover .core{transform:scale(1.08)}
+.n:focus-visible{outline:none}
+.n:focus-visible .face{stroke-width:3.4}
+.core{transform:scale(0); transform-box:fill-box; transform-origin:center;
+  transition:transform .5s cubic-bezier(.3,1.5,.45,1)}
+.tree.entering .core{transition-delay:var(--dl,0s)}
+.tree.grown .core{transform:scale(1)}
+.tree.settled .core{transition:transform .22s cubic-bezier(.3,1.5,.45,1)}
+.face{fill:var(--paper); stroke:var(--ink); stroke-width:1.8;
+  transition:fill .25s, stroke .25s, stroke-width .2s}
+.lbl{font-family:var(--disp); font-size:21px; font-weight:600; fill:var(--ink);
+  text-anchor:middle; transition:fill .25s}
+.ring{fill:none; stroke:var(--ink); stroke-width:1.3; stroke-dasharray:4 5; opacity:0; transition:opacity .25s}
+@keyframes march{to{stroke-dashoffset:-180}}
+.hl-child .ring{opacity:.85; stroke:var(--ink); animation:march 9s linear infinite}
+.cur .ring{opacity:1; stroke:var(--rust); animation:march 9s linear infinite}
+.cur .face{stroke:var(--rust); stroke-width:2.6}
+.hl-path .face{fill:var(--ochre-soft); stroke:var(--ochre); stroke-width:2.4}
+.hl-min .face{fill:var(--green-soft); stroke:var(--green); stroke-width:2.6}
+.hl-max .face{fill:var(--rust-soft); stroke:var(--rust); stroke-width:2.6}
+.visited .face{fill:var(--green-soft); stroke:var(--green); stroke-width:2.4}
+.visited .lbl{fill:var(--ink)}
+.hl-selected .face{fill:var(--rust); stroke:var(--rust)}
+.hl-selected .lbl{fill:var(--paper)}
+.dim{opacity:.14}
+.n.bye,.edge.bye{opacity:0}
+@keyframes pulsein{45%{transform:scale(1.16)}}
+.n.pulse .core{animation:pulsein .65s ease}
+@keyframes swapin{40%{transform:scale(1.22) rotate(4deg)}}
+.n.swap .core{animation:swapin .55s ease}
+
+.badge{opacity:0; transition:opacity .3s}
+.badge circle{fill:var(--paper); stroke:var(--ink); stroke-width:1.2}
+.badge text{font:600 10.5px var(--mono); fill:var(--ink); text-anchor:middle}
+.show-orders .badge{opacity:1}
+.stamp{font:10.5px var(--mono); fill:var(--ochre); text-anchor:middle;
+  opacity:0; transition:opacity .3s}
+.show-ranges .stamp{opacity:1}
+
+.ghost{transition:opacity .4s}
+.ghost circle{fill:var(--paper); fill-opacity:.75; stroke:var(--ochre);
+  stroke-width:1.5; stroke-dasharray:5 5}
+.ghost text{font:600 12px var(--mono); fill:var(--ochre); text-anchor:middle}
+.ghost.bye{opacity:0}
+
+/* ---------- glossary entries ---------- */
+.entry{display:grid; grid-template-columns:64px 1fr 256px; gap:30px;
+  padding:36px 0 34px; border-top:1px solid var(--line)}
+.entry.wide{grid-template-columns:64px 1fr}
+.num{font:500 13px var(--mono); color:var(--rust); padding-top:7px; letter-spacing:.05em}
+.ebody h3{font-family:var(--disp); font-size:27px; font-weight:600;
+  letter-spacing:-.01em; line-height:1.15}
+.latin{font:italic 400 17px var(--serif); color:var(--ochre); margin-left:10px}
+.ebody p{margin-top:10px; max-width:60ch; font-size:16.5px}
+.fact{margin-top:16px; font:500 12.5px/1.6 var(--mono);
+  background:var(--paper2); border-left:3px solid var(--rust);
+  padding:10px 14px; max-width:60ch}
+.code{margin-top:14px; font:400 13px/1.75 var(--mono); background:var(--paper2);
+  border:1px solid var(--line); border-left:3px solid var(--ink);
+  padding:12px 16px; max-width:46ch; white-space:pre; overflow-x:auto}
+.code .v{color:var(--rust); font-weight:600}
+.code .c{color:var(--faint); font-style:italic}
+.demo{margin-top:16px; font:600 11.5px var(--mono); letter-spacing:.06em;
+  background:none; border:none; border-bottom:1px dashed var(--rust);
+  color:var(--rust); padding:2px 1px; cursor:pointer}
+.demo:hover{background:var(--rust); color:var(--paper); border-bottom-color:transparent}
+.thumb{border:1.5px solid var(--ink); background:var(--paper);
+  box-shadow:5px 5px 0 rgba(37,48,32,.09); align-self:start; padding:8px 8px 0}
+.thumb svg{display:block; width:100%; height:auto}
+.thumb figcaption{font:400 10.5px var(--mono); color:var(--olive);
+  padding:8px 12px 10px; border-top:1px solid var(--line); letter-spacing:.04em}
+.minirow{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;
+  margin-top:20px; align-items:start}
+.minirow.duo{grid-template-columns:1fr 1fr}
+.mini{border:1.5px solid var(--ink); background:var(--paper);
+  box-shadow:5px 5px 0 rgba(37,48,32,.09)}
+.mini svg{display:block; width:100%; height:auto}
+.mini figcaption{font:400 10.5px var(--mono); color:var(--olive);
+  padding:8px 12px 10px; border-top:1px solid var(--line); letter-spacing:.04em}
+.formula{display:block; width:100%; height:auto}
+.formula .fs{fill:var(--rust); stroke:var(--ink); stroke-width:1.4}
+.formula .fo{fill:var(--paper); stroke:var(--ink); stroke-width:1.4}
+.formula text{font:600 11px var(--mono); fill:var(--ink); text-anchor:middle}
+.formula .fn{fill:var(--paper)}
+.formula .fm{font:500 11px var(--mono); fill:var(--olive); letter-spacing:.08em}
+
+/* ---------- reading bench: controls & strips ---------- */
+.pctl{display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between;
+  align-items:center; margin-top:16px}
+.tabs{display:flex; flex-wrap:wrap; gap:6px}
+.tab{font:700 11px var(--mono); letter-spacing:.08em; text-transform:uppercase;
+  border:1.5px solid var(--ink); background:none; color:var(--ink);
+  padding:7px 13px; cursor:pointer; transition:.15s}
+.tab:hover{background:var(--paper2)}
+.tab[aria-pressed="true"]{background:var(--ink); color:var(--paper)}
+.transport{display:flex; flex-wrap:wrap; gap:6px}
+.strips{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px}
+.outwrap,.mechwrap{border:1.5px solid var(--ink); background:var(--paper);
+  box-shadow:5px 5px 0 rgba(37,48,32,.09)}
+.strip-tag{display:block; font:700 10px var(--mono); letter-spacing:.16em;
+  text-transform:uppercase; color:var(--olive); padding:9px 12px 0}
+.outstrip,.mechstrip{display:flex; flex-wrap:wrap; gap:6px; align-items:center;
+  padding:8px 12px 12px; min-height:48px}
+.kchip{font:600 13px var(--mono); border:1.2px solid var(--ink);
+  padding:2px 9px; background:var(--paper)}
+.outstrip.golden .kchip{border-color:var(--ochre); background:var(--ochre-soft)}
+.sortedb{font:700 11px var(--mono); letter-spacing:.08em; text-transform:uppercase;
+  background:var(--ochre); color:var(--paper); padding:3px 10px}
+@keyframes chipin{from{opacity:0; transform:translateY(-7px) scale(.7)}}
+.kchip.new{animation:chipin .4s ease}
+.mchip{font:500 12px var(--mono); border:1.2px dashed var(--olive);
+  color:var(--olive); padding:2px 8px; background:var(--paper2)}
+.mchip.new{animation:chipin .35s ease}
+.mchip.gone{opacity:0; transform:translateY(5px); transition:.25s}
+.mech-empty{font:italic 400 12.5px var(--serif); color:var(--faint)}
+
+/* ---------- recap table ---------- */
+table{width:100%; border-collapse:collapse; margin-top:2px}
+thead th{font:700 10.5px var(--mono); letter-spacing:.16em; text-transform:uppercase;
+  color:var(--olive); text-align:left; padding:10px 12px; border-bottom:2px solid var(--ink)}
+tbody td{padding:11px 12px; border-bottom:1px solid var(--line);
+  vertical-align:top; font-size:15.5px}
+td.rt{font-family:var(--disp); font-weight:600; font-size:17px; white-space:nowrap}
+td.rx{font:400 12.5px/1.5 var(--mono)}
+tbody tr:hover{background:var(--paper2)}
+
+/* ---------- quiz ---------- */
+.q{border-top:1px solid var(--line); padding:20px 0 18px}
+.q-s{font-size:17.5px; max-width:70ch}
+.q-n{font:600 12px var(--mono); color:var(--rust); margin-right:12px}
+.q-b{margin-top:12px; display:flex; gap:12px}
+.qb{font:700 11px var(--mono); letter-spacing:.14em; text-transform:uppercase;
+  border:1.5px solid var(--ink); background:transparent; color:var(--ink);
+  padding:7px 20px; cursor:pointer; transition:.15s}
+.qb:hover:not(:disabled){background:var(--ink); color:var(--paper)}
+.qb:disabled{cursor:default}
+.qb.right{background:var(--green); border-color:var(--green); color:var(--paper)}
+.qb.wrong{background:var(--rust); border-color:var(--rust); color:var(--paper)}
+.q-why{display:none; margin-top:12px; font-style:italic; font-size:15px;
+  color:var(--olive); max-width:64ch}
+.q-why b{font-style:normal; color:var(--ink); font-family:var(--mono);
+  font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; margin-right:6px}
+.q-why.show{display:block; animation:rise .45s ease}
+@keyframes rise{from{opacity:0; transform:translateY(4px)} to{opacity:1}}
+.q-score{margin-top:22px; font:500 12px var(--mono); display:flex; gap:18px; align-items:center}
+.qlink{font:600 11px var(--mono); letter-spacing:.08em; text-transform:uppercase;
+  background:none; border:none; color:var(--rust); cursor:pointer;
+  border-bottom:1px dashed var(--rust); padding:0}
+.qlink:hover{color:var(--paper); background:var(--rust)}
+.q-verdict{margin-top:10px; font-style:italic; font-size:16px; color:var(--rust)}
+
+/* ---------- footer ---------- */
+footer{margin-top:82px; border-top:2px solid var(--ink); padding:26px 0 64px;
+  display:grid; grid-template-columns:1fr auto; gap:30px; align-items:start}
+.foot-note{font-style:italic; font-size:15px; color:var(--olive); max-width:66ch}
+.foot-note b{color:var(--ink); font-style:normal}
+.foot-note + .foot-note{margin-top:12px}
+.credit{font:400 11px/1.75 var(--mono); color:var(--faint); text-align:right; max-width:300px}
+
+/* ---------- responsive ---------- */
+@media (max-width:940px){.spec-grid{grid-template-columns:1fr}.strips{grid-template-columns:1fr}}
+@media (max-width:860px){
+  .entry{grid-template-columns:52px 1fr}
+  .entry .thumb{grid-column:2; max-width:380px}
+  .entry.wide{grid-template-columns:52px 1fr}
+  .minirow{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+  .page{padding:0 20px}
+  .entry,.entry.wide{grid-template-columns:1fr}
+  .num{padding-top:0}
+  .entry .thumb{grid-column:1}
+  .kv{grid-template-columns:80px 1fr}
+  footer{grid-template-columns:1fr}
+  .credit{text-align:left}
+  td.rt{white-space:normal}
+  .pctl{flex-direction:column; align-items:flex-start}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important; transition:none!important}
+  .tree .edge{stroke-dasharray:none; stroke-dashoffset:0}
+  .tree .core{transform:scale(1)}
+}
+</style>
+</head>
+<body>
+
+<nav class="rail" aria-label="Sheet index">
+  <div class="rh">part i · order</div>
+  <a href="#specimen">the specimen</a>
+  <a href="#t-property">01 · the property</a>
+  <a href="#t-search">02 · search</a>
+  <a href="#t-extrema">03 · extrema</a>
+  <a href="#t-insert">04 · insertion</a>
+  <a href="#t-delete">05 · deletion</a>
+  <a href="#t-balance">06 · balance</a>
+  <div class="rh">part ii · readings</div>
+  <a href="#bench">the reading bench</a>
+  <a href="#t-trav">07 · traversal</a>
+  <a href="#t-pre">08 · preorder</a>
+  <a href="#t-in">09 · inorder</a>
+  <a href="#t-post">10 · postorder</a>
+  <a href="#t-lvl">11 · level-order</a>
+  <a href="#recap">recap</a>
+  <a href="#quiz">quiz</a>
+</nav>
+
+<div class="page">
+
+  <!-- ============ masthead ============ -->
+  <header class="masthead">
+    <div class="overline"><span>Field notes · Data structures · Sheet № 2</span></div>
+    <h1>The Binary <em>Search</em> Tree</h1>
+    <p class="sub">One law — order — and the four ways to read what grows from it.</p>
+    <div class="meta" id="mastMeta"></div>
+    <svg class="sprig" viewBox="0 0 160 150" aria-hidden="true">
+      <path class="stem" d="M16 138 C 40 108, 58 84, 118 30"/>
+      <path class="leaf" d="M0 0 C 9 -13 22 -19 32 -19 C 26 -8 13 -2 0 0 Z" transform="translate(30,112) rotate(-138) scale(.5)"/>
+      <path class="leaf" d="M0 0 C 9 -13 22 -19 32 -19 C 26 -8 13 -2 0 0 Z" transform="translate(44,96) rotate(-46) scale(.62)"/>
+      <path class="leaf" d="M0 0 C 9 -13 22 -19 32 -19 C 26 -8 13 -2 0 0 Z" transform="translate(60,80) rotate(-136) scale(.74)"/>
+      <path class="leaf" d="M0 0 C 9 -13 22 -19 32 -19 C 26 -8 13 -2 0 0 Z" transform="translate(74,64) rotate(-44) scale(.88)"/>
+      <path class="leaf" d="M0 0 C 9 -13 22 -19 32 -19 C 26 -8 13 -2 0 0 Z" transform="translate(90,48) rotate(-134) scale(1)"/>
+      <path class="leaf big" d="M0 0 C 11 -16 27 -24 40 -24 C 32 -9 15 -2 0 0 Z" transform="translate(118,30) rotate(-64) scale(1.18)"/>
+    </svg>
+  </header>
+
+  <!-- ============ intro ============ -->
+  <section class="intro" id="intro">
+    <p>Sheet № 1 catalogued the tree’s anatomy — root, leaves, depth, degree — without asking what the tree was <em>for</em>. This sheet adds the one law that turns a shape into a tool: order. In a binary search tree, every node keeps its left subtree strictly smaller and its right subtree strictly larger, and out of that single rule fall search, insertion, and deletion — each of them a walk down one path.</p>
+    <p>But a structure you can only store in is a warehouse. The second half of this sheet is about <em>reading</em>: traversal, the business of visiting every node exactly once. A list has one reading order; a tree must choose among them, and the useful choices number four.</p>
+    <p class="hint">The specimen is live — click its nodes, search, graft, and prune from the bench — and the reading bench in Part II plays every traversal step by step, stamping visit numbers on the nodes as it goes.</p>
+  </section>
+
+  <!-- ============ part I ============ -->
+  <div class="part" id="part1">
+    <span class="pn">I</span>
+    <div>
+      <h2>The ordered specimen</h2>
+      <p>One new law — order. Six entries on what the law buys: search that discards a subtree per comparison, extrema at the tips, grafting and pruning that keep the law intact — and what happens when the shape goes bad.</p>
+    </div>
+  </div>
+
+  <!-- ============ specimen board ============ -->
+  <section class="sec" id="specimen" data-rail>
+    <header class="sec-head">
+      <span class="sec-tag"><span class="mark">§</span>The specimen</span>
+      <span class="sec-note">interactive — click nodes, or work from the bench</span>
+    </header>
+    <div class="spec-grid">
+      <figure class="board">
+        <div class="tree-wrap" id="specWrap"></div>
+        <figcaption class="caption" id="capBar">
+          <span id="capText" aria-live="polite"></span>
+          <button class="clear" id="clearBtn" type="button" hidden>clear ×</button>
+        </figcaption>
+        <div class="bench" id="opsBench">
+          <span class="blab">key</span>
+          <input id="keyIn" type="number" min="0" max="99" step="1" inputmode="numeric" aria-label="key to search or insert">
+          <button class="bbtn" data-op="search" type="button">search</button>
+          <button class="bbtn rust" data-op="insert" type="button">insert</button>
+          <span class="bdiv"></span>
+          <button class="preset" data-preset="s45" type="button">find 45</button>
+          <button class="preset" data-preset="s65" type="button">find 65</button>
+          <button class="preset" data-preset="i55" type="button">graft 55</button>
+          <button class="preset" data-op="minmax" type="button">min · max</button>
+          <button class="bbtn rust" data-op="restore" id="restoreBtn" type="button" hidden>restore specimen</button>
+        </div>
+        <div class="legend">
+          <div class="lg"><i class="sw sw-sel"></i>current</div>
+          <div class="lg"><i class="sw sw-path"></i>walk so far</div>
+          <div class="lg"><i class="sw sw-min"></i>min spine</div>
+          <div class="lg"><i class="sw sw-max"></i>max spine</div>
+          <div class="lg"><i class="sw sw-ghost"></i>∅ dead end</div>
+        </div>
+      </figure>
+      <aside class="inspector" id="inspector" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <!-- ============ part I entries ============ -->
+  <section class="sec">
+    <header class="sec-head">
+      <span class="sec-tag"><span class="mark">§</span>The law &amp; its consequences</span>
+      <span class="sec-note">entries 01–06 · each demonstrable on the specimen</span>
+    </header>
+
+    <article class="entry" id="t-property" data-rail>
+      <div class="num">01</div>
+      <div class="ebody">
+        <h3>The BST property<span class="latin">lex ordinis</span></h3>
+        <p>A binary tree obeys the search-tree property when, for <em>every</em> node, every key in its left subtree is smaller than it and every key in its right subtree is larger. Not just the immediate children — the entire subtrees, recursively. The consequence is almost geometric: each node inherits an open interval of legal keys from its ancestors (the root rules (−∞, +∞)), and every descent narrows it. Press demonstrate and every node prints its interval — the law, drawn.</p>
+        <div class="fact">∀ node · left subtree &lt; node &lt; right subtree — whole subtrees, recursively<br>specimen check: <span data-live="check"></span></div>
+        <button class="demo" data-demo="ranges" type="button">draw every interval →</button>
+      </div>
+      <figure class="thumb" data-mini="property"><figcaption>every node carries its inherited interval</figcaption></figure>
+    </article>
+
+    <article class="entry" id="t-search" data-rail>
+      <div class="num">02</div>
+      <div class="ebody">
+        <h3>Search<span class="latin">quaestio</span></h3>
+        <p>To find a key k, compare it with the root: smaller — descend left; larger — descend right; equal — done. Each comparison discards an <em>entire subtree</em>, which is where the speed comes from. If k is present the walk ends at its node; if absent, it ends at an empty pointer — and the cost is the same either way: one root-to-node path, never more than h + 1 comparisons. Try <em>find 45</em> and <em>find 65</em> on the bench and watch both destinies unfold.</p>
+        <div class="fact">cost = one root-to-node path ≤ h + 1 = <span data-live="h1"></span> comparisons (h = <span data-live="h"></span>)<br>balanced → O(log n) · skewed → O(n)</div>
+        <button class="demo" data-demo="search" type="button">demonstrate: find 45 →</button>
+      </div>
+      <figure class="thumb" data-mini="search"><figcaption>finding 45 — four comparisons, one per level</figcaption></figure>
+    </article>
+
+    <article class="entry" id="t-extrema" data-rail>
+      <div class="num">03</div>
+      <div class="ebody">
+        <h3>Minimum &amp; maximum<span class="latin">extrema</span></h3>
+        <p>The minimum key lives at the leftmost node — follow left pointers until there are none; the maximum at the rightmost. Two walks, each no longer than the height. Note what this really is: the first and last keys of the sorted order, reachable without sorting anything. The tree keeps its extremes stored at its two outermost tips.</p>
+        <div class="fact">min = leftmost node · max = rightmost node · each ≤ h+1 steps<br>live: <span data-live="min"></span> · <span data-live="max"></span></div>
+        <button class="demo" data-demo="extrema" type="button">trace both spines →</button>
+      </div>
+      <figure class="thumb" data-mini="extrema"><figcaption>left hands to the minimum, right hands to the maximum</figcaption></figure>
+    </article>
+
+    <article class="entry" id="t-insert" data-rail>
+      <div class="num">04</div>
+      <div class="ebody">
+        <h3>Insertion<span class="latin">insitio — a graft</span></h3>
+        <p>To insert k, search for it as though it were present. The search will fail — at exactly the empty pointer where k belongs — and that dead end is the grafting point: attach a new leaf there. Because the search path respected the ordering law, the new node automatically satisfies its inherited interval. No rearrangement, no re-checking: insertion is a failed search plus one graft. Try <em>graft 55</em> from the bench, or type any key 0–99.</p>
+        <div class="fact">every insertion lands as a leaf — the property is preserved by construction</div>
+        <button class="demo" data-demo="insert" type="button">demonstrate: graft 55 →</button>
+      </div>
+      <figure class="thumb" data-mini="insert"><figcaption>the search for 55 ends at 60’s empty left pointer</figcaption></figure>
+    </article>
+
+    <article class="entry wide" id="t-delete" data-rail>
+      <div class="num">05</div>
+      <div class="ebody">
+        <h3>Deletion<span class="latin">putatio — a pruning</span></h3>
+        <p>Pruning is where BSTs earn their reputation. A <em>leaf</em> detaches cleanly (case 1). A node with <em>one child</em> is spliced out — the child is promoted into the vacancy, subtree and all (case 2). A node with <em>two children</em> cannot be spliced: replace its key with the <em>inorder successor</em> — the leftmost node of its right subtree, which is the next key in sorted order — and prune that successor instead; it has no left child, so its own removal falls back to case 1 or 2. Click any node on the specimen and prune it from its record.</p>
+        <div class="fact">case 3: key ← inorder successor (leftmost of the right subtree), then prune the successor</div>
+        <button class="demo" data-demo="delete" type="button">demonstrate: prune the root →</button>
+        <div class="minirow">
+          <figure class="mini" data-mini="del1"><figcaption>case 1 — a leaf: detach it</figcaption></figure>
+          <figure class="mini" data-mini="del2"><figcaption>case 2 — one child: promote it</figcaption></figure>
+          <figure class="mini" data-mini="del3"><figcaption>case 3 — two children: the successor moves up</figcaption></figure>
+        </div>
+      </div>
+    </article>
+
+    <article class="entry wide" id="t-balance" data-rail>
+      <div class="num">06</div>
+      <div class="ebody">
+        <h3>Height &amp; balance<span class="latin">aequilibrium</span></h3>
+        <p>Every operation above walks a single path, so the height is the price of everything. The same six keys can sit at height 2 or height 5 depending on insertion order — feed a BST sorted keys and it degenerates into a chain, a linked list wearing a costume, and search collapses from O(log n) to O(n). Self-balancing trees (AVL, red-black) rotate on insertion to keep the height near ⌊log₂ n⌋ — the subject of a future sheet. For now, the field advice: never insert sorted data into an honest BST.</p>
+        <div class="fact">search O(h) → O(log n) if balanced · O(n) if skewed<br>live: h = <span data-live="h"></span> · n = <span data-live="n"></span> · ⌊log₂ n⌋ = <span data-live="logn"></span></div>
+        <button class="demo" data-demo="height" type="button">trace the longest path →</button>
+        <div class="minirow duo">
+          <figure class="mini" data-mini="bal"><figcaption>inserted 40, 20, 60, 10, 30, 50 — h = 2</figcaption></figure>
+          <figure class="mini" data-mini="chain"><figcaption>inserted 10, 20, 30, 40, 50, 60 — h = 5, a chain</figcaption></figure>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ part II ============ -->
+  <div class="part" id="part2">
+    <span class="pn">II</span>
+    <div>
+      <h2>The four readings</h2>
+      <p>A list has one reading order; a tree chooses among four. The reading bench plays each one on the live specimen, step by step — stack or queue visible, visit numbers stamped, keys emitted as they are read.</p>
+    </div>
+  </div>
+
+  <!-- ============ reading bench ============ -->
+  <section class="sec" id="bench" data-rail>
+    <header class="sec-head">
+      <span class="sec-tag"><span class="mark">§</span>The reading bench</span>
+      <span class="sec-note">pick a reading, press play — every visit is stamped &amp; emitted</span>
+    </header>
+    <figure class="board">
+      <div class="tree-wrap" id="playWrap"></div>
+      <figcaption class="caption"><span id="pCap" aria-live="polite"></span></figcaption>
+      <div class="legend">
+        <div class="lg"><i class="sw sw-cur"></i>current</div>
+        <div class="lg"><i class="sw sw-vis"></i>visited · order-stamped</div>
+        <div class="lg"><i class="sw sw-ghost"></i>∅ empty pointer</div>
+      </div>
+    </figure>
+    <div class="pctl">
+      <div class="tabs" role="group" aria-label="traversal mode">
+        <button class="tab" data-mode="pre" type="button" aria-pressed="false">pre · N L R</button>
+        <button class="tab" data-mode="in" type="button" aria-pressed="true">in · L N R</button>
+        <button class="tab" data-mode="post" type="button" aria-pressed="false">post · L R N</button>
+        <button class="tab" data-mode="lvl" type="button" aria-pressed="false">level · queue</button>
+      </div>
+      <div class="transport">
+        <button class="bbtn rust" id="playBtn" type="button">play</button>
+        <button class="bbtn" id="stepBtn" type="button">step</button>
+        <button class="bbtn" id="pResetBtn" type="button">reset</button>
+        <button class="bbtn" id="speedBtn" type="button">1×</button>
+      </div>
+    </div>
+    <div class="strips">
+      <div class="outwrap">
+        <span class="strip-tag">output — visit order</span>
+        <div class="outstrip" id="outStrip"><span class="mech-empty">nothing yet — the reading hasn’t begun</span></div>
+      </div>
+      <div class="mechwrap">
+        <span class="strip-tag" id="mechTag">call stack · returns from the right</span>
+        <div class="mechstrip" id="mechStrip"><span class="mech-empty">empty</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ part II entries ============ -->
+  <section class="sec">
+    <header class="sec-head">
+      <span class="sec-tag"><span class="mark">§</span>The readings, defined</span>
+      <span class="sec-note">entries 07–11 · each playable on the bench above</span>
+    </header>
+
+    <article class="entry" id="t-trav" data-rail>
+      <div class="num">07</div>
+      <div class="ebody">
+        <h3>Traversal<span class="latin">lectio — a reading</span></h3>
+        <p>To traverse a tree is to visit every node exactly once. A list is read in one direction because it has no other; a tree must choose. The three depth-first readings differ only in <em>when the root is read</em> relative to its two subtrees — first, between, or last — and the root’s seat names the reading: pre-, in-, post-order. They share one recursive spine and merely swap three lines. The fourth reading, level-order, abandons recursion for a queue and reads breadth-first. Watch the mechanism strip on the bench: depth-first readings drive a call stack; level-order drives a queue.</p>
+        <div class="fact">N = the node · L = left subtree · R = right subtree — the root’s seat names the reading</div>
+        <div class="code">read(node):
+  if node = ∅: return        <span class="c">← every reading shares this spine</span>
+  &lt;left&gt;  &lt;node&gt;  &lt;right&gt;    <span class="c">← only the seating changes</span></div>
+        <button class="demo" data-play="in" type="button">open the reading bench →</button>
+      </div>
+      <figure class="thumb">
+        <svg class="formula" viewBox="0 0 260 216" aria-hidden="true">
+          <g transform="translate(0,36)">
+            <circle class="fs" cx="52" cy="0" r="13"/><text class="fn" x="52" y="4">N</text>
+            <circle class="fo" cx="100" cy="0" r="13"/><text x="100" y="4">L</text>
+            <circle class="fo" cx="148" cy="0" r="13"/><text x="148" y="4">R</text>
+            <text class="fm" x="226" y="4">pre</text>
+          </g>
+          <g transform="translate(0,108)">
+            <circle class="fo" cx="52" cy="0" r="13"/><text x="52" y="4">L</text>
+            <circle class="fs" cx="100" cy="0" r="13"/><text class="fn" x="100" y="4">N</text>
+            <circle class="fo" cx="148" cy="0" r="13"/><text x="148" y="4">R</text>
+            <text class="fm" x="226" y="4">in</text>
+          </g>
+          <g transform="translate(0,180)">
+            <circle class="fo" cx="52" cy="0" r="13"/><text x="52" y="4">L</text>
+            <circle class="fo" cx="100" cy="0" r="13"/><text x="100" y="4">R</text>
+            <circle class="fs" cx="148" cy="0" r="13"/><text class="fn" x="148" y="4">N</text>
+            <text class="fm" x="226" y="4">post</text>
+          </g>
+        </svg>
+        <figcaption>the root’s seat names the reading — level-order takes no seat at all</figcaption>
+      </figure>
+    </article>
+
+    <article class="entry" id="t-pre" data-rail>
+      <div class="num">08</div>
+      <div class="ebody">
+        <h3>Preorder<span class="latin">radix prius</span></h3>
+        <p>Read the node, then its left subtree, then its right. Two facts make preorder useful. First: the first key emitted is always the root. Second: feed the whole sequence into an empty BST and the identical tree regrows — preorder is a <em>build order</em>, which is why it’s the standard choice for copying and serializing trees. It also reads expressions in prefix (Polish) notation.</p>
+        <div class="code">preorder(node):
+  if node = ∅: return
+  <span class="v">visit(node)</span>              <span class="c">← the root first</span>
+  preorder(node.left)
+  preorder(node.right)</div>
+        <div class="fact">first emitted = the root · rebuild: insert in this order<br>live: <span data-live="pre"></span></div>
+        <button class="demo" data-play="pre" type="button">play preorder on the bench →</button>
+      </div>
+      <figure class="thumb" data-mini="pre"><figcaption>visit numbers — preorder</figcaption></figure>
+    </article>
+
+    <article class="entry" id="t-in" data-rail>
+      <div class="num">09</div>
+      <div class="ebody">
+        <h3>Inorder<span class="latin">radix media</span></h3>
+        <p>Left subtree, node, right subtree. On an arbitrary binary tree, inorder is just one more ordering. On a BST it is <em>the sorted order</em>: the recursion reads the smaller keys first, the node between, the larger after — ascending, every time, with no sorting performed. That is the tree’s secret: it isn’t so much searched quickly as it is <em>sorted structurally</em>, and inorder is the reading that lets you see it. It is also the cheapest BST validator there is — run it, and check that the output ascends.</p>
+        <div class="code">inorder(node):
+  if node = ∅: return
+  inorder(node.left)
+  <span class="v">visit(node)</span>              <span class="c">← the root in the middle</span>
+  inorder(node.right)</div>
+        <div class="fact">inorder(BST) = keys ascending, zero comparisons spent<br>live: <span data-live="in"></span></div>
+        <button class="demo" data-play="in" type="button">play inorder on the bench →</button>
+      </div>
+      <figure class="thumb" data-mini="in"><figcaption>read the keys left to right: sorted</figcaption></figure>
+    </article>
+
+    <article class="entry" id="t-post" data-rail>
+      <div class="num">10</div>
+      <div class="ebody">
+        <h3>Postorder<span class="latin">radix postrema</span></h3>
+        <p>Both subtrees first, the node last — children before parent, always. That ordering is exactly what safe deletion of an entire tree requires (no node is freed while it still has children to free), and what bottom-up computation requires: subtree sizes, heights, and sums are all naturally postorder. The last key emitted is the root — preorder’s mirror. Postorder reads expressions in postfix (Reverse Polish) notation.</p>
+        <div class="code">postorder(node):
+  if node = ∅: return
+  postorder(node.left)
+  postorder(node.right)
+  <span class="v">visit(node)</span>              <span class="c">← the root last</span></div>
+        <div class="fact">last emitted = the root · subtree aggregates compute bottom-up<br>live: <span data-live="post"></span></div>
+        <button class="demo" data-play="post" type="button">play postorder on the bench →</button>
+      </div>
+      <figure class="thumb" data-mini="post"><figcaption>visit numbers — postorder</figcaption></figure>
+    </article>
+
+    <article class="entry" id="t-lvl" data-rail>
+      <div class="num">11</div>
+      <div class="ebody">
+        <h3>Level-order<span class="latin">per gradus</span></h3>
+        <p>Read level 0 left to right, then level 1, and so on — the tree unrolled row by row. No recursion: a queue does the work. Dequeue a node, visit it, enqueue its children; FIFO order becomes breadth order. Level-order answers the questions the depth-first readings cannot see: how wide the tree is, what each row sums to, which nodes sit nearest the root.</p>
+        <div class="code">levelorder(root):
+  queue ← [root]
+  while queue not empty:
+    node ← queue.dequeue()    <span class="c">← FIFO becomes breadth</span>
+    <span class="v">visit(node)</span>
+    if node.left:  queue.enqueue(node.left)
+    if node.right: queue.enqueue(node.right)</div>
+        <div class="fact">a queue, not recursion: dequeue → visit → enqueue children<br>live: <span data-live="lvl"></span></div>
+        <button class="demo" data-play="lvl" type="button">play level-order on the bench →</button>
+      </div>
+      <figure class="thumb" data-mini="lvl"><figcaption>read row by row — the levels made visible</figcaption></figure>
+    </article>
+  </section>
+
+  <!-- ============ recap ============ -->
+  <section class="sec" id="recap" data-rail>
+    <header class="sec-head">
+      <span class="sec-tag"><span class="mark">§</span>Recap</span>
+      <span class="sec-note">the whole sheet on one table — values computed from the live specimen</span>
+    </header>
+    <table>
+      <thead><tr><th>Term</th><th>In plain words</th><th>On this specimen</th></tr></thead>
+      <tbody id="recapBody"></tbody>
+    </table>
+  </section>
+
+  <!-- ============ quiz ============ -->
+  <section class="sec" id="quiz" data-rail>
+    <header class="sec-head">
+      <span class="sec-tag"><span class="mark">§</span>Field examination</span>
+      <span class="sec-note">five statements, true or false — the specimen is fair game</span>
+    </header>
+    <div id="quizList"></div>
+    <div class="q-score"><span id="qScore">0 of 5 answered</span><button class="qlink" id="qReset" type="button">reset</button></div>
+    <p class="q-verdict" id="qVerdict" hidden></p>
+  </section>
+
+  <footer>
+    <div>
+      <p class="foot-note"><b>A note on conventions.</b> The two-children deletion may borrow the inorder <em>predecessor</em> instead of the successor — both keep the order intact; textbooks differ, and so do libraries. This sheet’s specimens keep distinct keys; real implementations choose their own duplicate policy. Height is counted in edges, as on Sheet № 1.</p>
+      <p class="foot-note"><b>A confession of method.</b> Every figure on this page — the traversal outputs, the intervals, the spine walks, the height checks — is computed from the live specimen at run time, never typed by hand. Even the drawing obeys the law: each node’s horizontal position is its inorder rank, so the diagram is itself sorted. Your grafts and prunings propagate to every table and fact box on the page.</p>
+      <p class="foot-note"><b>Further fieldwork.</b> When balance rots, practice turns to self-balancing specimens — AVL and red-black trees, and their rotations. Sheet № 3, someday. Sheet № 1, <em>The Tree</em>, covers the anatomy this sheet builds on.</p>
+    </div>
+    <p class="credit">Field notes · Sheet № 2 — The Binary Search Tree<br>Typeset in Fraunces, Newsreader &amp; JetBrains Mono<br>Runs entirely in your browser</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+const NS='http://www.w3.org/2000/svg';
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const VW=700, X0=44, Y0=58, LH=96;
+const MAXN=14, MAXD=4;
+
+/* ================= state ================= */
+let nodes={}, root=null, seq=0, mutated=false, SNAP=null, busy=false;
+const FOUNDING=[50,30,70,20,40,60,80,35,45];
+
+function mk(k){ const n={id:'n'+(++seq),key:k,l:null,r:null}; nodes[n.id]=n; return n; }
+function insertPlain(k){
+  if(!root){ root=mk(k); return root; }
+  let c=root;
+  for(;;){ if(k<c.key){ if(!c.l){ c.l=mk(k); return c.l; } c=c.l; }
+           else { if(!c.r){ c.r=mk(k); return c.r; } c=c.r; } }
+}
+function founding(){ nodes={}; root=null; seq=0; mutated=false; FOUNDING.forEach(insertPlain); }
+function findWalk(k){
+  const steps=[]; let c=root;
+  while(c){ steps.push(c); if(k===c.key) return {steps,found:true}; c=k<c.key?c.l:c.r; }
+  return {steps,found:false};
+}
+function deleteKey(key){
+  let cur=root, par=null, side=null;
+  while(cur && cur.key!==key){ par=cur; side=key<cur.key?'l':'r'; cur=cur[side]; }
+  if(!cur) return null;
+  if(cur.l && cur.r){
+    let s=cur.r, spar=cur, sside='r';
+    while(s.l){ spar=s; sside='l'; s=s.l; }
+    cur.key=s.key; spar[sside]=s.r;
+    delete nodes[s.id];
+    return s;
+  }
+  const child=cur.l||cur.r;
+  if(!par) root=child; else par[side]=child;
+  delete nodes[cur.id];
+  return cur;
+}
+const minNode=n=>{ while(n.l) n=n.l; return n; };
+const maxNode=n=>{ while(n.r) n=n.r; return n; };
+const sizeOf=n=>n?1+sizeOf(n.l)+sizeOf(n.r):0;
+function nodeHeight(n){
+  if(!n.l&&!n.r) return 0;
+  const c=[]; if(n.l)c.push(nodeHeight(n.l)); if(n.r)c.push(nodeHeight(n.r));
+  return 1+Math.max(...c);
+}
+function longestPath(){
+  let best=[];
+  (function rec(n,path){ if(!n)return; const p=[...path,n];
+    if(!n.l&&!n.r){ if(p.length>best.length) best=p; }
+    else { rec(n.l,p); rec(n.r,p); }
+  })(root,[]);
+  return best;
+}
+function bstCheck(){
+  let ok=0,tot=0;
+  (function rec(n,lo,hi){ if(!n)return; tot++;
+    if((lo===null||n.key>lo)&&(hi===null||n.key<hi)) ok++;
+    rec(n.l,lo,n.key); rec(n.r,n.key,hi);
+  })(root,null,null);
+  return ok+' / '+tot+' nodes in order';
+}
+function seqOf(m){
+  const a=[];
+  if(m==='lvl'){ const q=[root]; while(q.length){ const n=q.shift(); a.push(n.key); if(n.l)q.push(n.l); if(n.r)q.push(n.r); } return a; }
+  (function rec(n){ if(!n)return; if(m==='pre')a.push(n.key); rec(n.l); if(m==='in')a.push(n.key); rec(n.r); if(m==='post')a.push(n.key); })(root);
+  return a;
+}
+const snapshot=n=>n?{k:n.key,l:snapshot(n.l),r:snapshot(n.r)}:null;
+
+/* ================= layout (x = inorder rank) ================= */
+function layout(){
+  const pos=new Map(); let i=0,h=0;
+  (function rec(n,d,pid,lo,hi){
+    if(!n) return;
+    rec(n.l,d+1,n.id,lo,n.key);
+    pos.set(n.id,{i:i++,d,pid,lo,hi});
+    if(d>h)h=d;
+    rec(n.r,d+1,n.id,n.key,hi);
+  })(root,0,null,null,null);
+  const n=i;
+  const gap=n>1?Math.min(160,(VW-2*X0)/(n-1)):0;
+  const x0=(VW-gap*(n-1))/2;
+  pos.forEach(p=>{ p.x=n>1?x0+p.i*gap:VW/2; p.y=Y0+p.d*LH; });
+  return {pos,n,h};
+}
+function edgeD(pp,cp){
+  const qx=pp.x+(cp.x-pp.x)*0.16, qy=(pp.y+cp.y)/2;
+  return 'M '+pp.x.toFixed(1)+' '+(pp.y+21).toFixed(1)+' Q '+qx.toFixed(1)+' '+qy.toFixed(1)+' '+cp.x.toFixed(1)+' '+(cp.y-21).toFixed(1);
+}
+const rangeStr=p=>'('+(p.lo===null?'−∞':p.lo)+', '+(p.hi===null?'+∞':p.hi)+')';
+
+/* ================= boards ================= */
+function makeBoard(sel,interactive){
+  const wrap=document.querySelector(sel);
+  const svg=document.createElementNS(NS,'svg');
+  svg.setAttribute('viewBox','0 0 700 500');
+  svg.setAttribute('class','tree'+(interactive?' interactive':''));
+  if(interactive){ svg.setAttribute('role','group'); svg.setAttribute('aria-label','binary search tree specimen — click a node for its record'); }
+  else { svg.setAttribute('role','img'); svg.setAttribute('aria-label','the specimen, replaying a traversal'); }
+  let guides='';
+  for(let d=0;d<=MAXD;d++){ const y=Y0+d*LH;
+    guides+='<line class="guide" x1="30" x2="588" y1="'+y+'" y2="'+y+'"/><text class="gl" x="598" y="'+(y+4)+'">level '+d+'</text>'; }
+  svg.innerHTML='<g class="guides">'+guides+'</g><g class="edges"></g><g class="nodes"></g><g class="fx"></g>';
+  wrap.appendChild(svg);
+  return {svg, interactive, edgesG:svg.querySelector('.edges'), nodesG:svg.querySelector('.nodes'),
+          fx:svg.querySelector('.fx'), els:new Map(), eEls:new Map(), cur:new Map(), raf:0};
+}
+function mkNodeEl(b,n,p,enter){
+  const g=document.createElementNS(NS,'g');
+  g.setAttribute('class','n'); g.setAttribute('data-id',n.id);
+  g.setAttribute('transform','translate('+p.x+','+p.y+')');
+  if(b.interactive){ g.setAttribute('tabindex','0'); g.setAttribute('role','button'); g.setAttribute('aria-label','node '+n.key); }
+  const dl=enter?' style="--dl:'+(0.08+p.d*0.26).toFixed(2)+'s"':'';
+  g.innerHTML='<g class="core"'+dl+'><circle class="ring" r="27"/><circle class="face" r="21"/><text class="lbl" y="7.5">'+n.key+'</text></g>'+
+    '<g class="badge"><circle cx="20" cy="-20" r="10.5"/><text x="20" y="-16.6"></text></g>'+
+    '<text class="stamp" y="37"></text>';
+  return g;
+}
+function mkEdgeEl(id,pp,cp,enter){
+  const ed=document.createElementNS(NS,'path');
+  ed.setAttribute('class','edge'); ed.setAttribute('data-child',id);
+  ed.setAttribute('pathLength','1'); ed.setAttribute('d',edgeD(pp,cp));
+  if(enter) ed.style.setProperty('--dl',(0.04+cp.d*0.26).toFixed(2)+'s');
+  return ed;
+}
+function syncBoard(b,L,animate,enter){
+  for(const [id,p] of L.pos){
+    const n=nodes[id];
+    let el=b.els.get(id);
+    if(!el){
+      el=mkNodeEl(b,n,p,enter); b.nodesG.appendChild(el);
+      b.els.set(id,el); b.cur.set(id,{x:p.x,y:p.y});
+    } else {
+      const lbl=el.querySelector('.lbl');
+      if(lbl.textContent!==String(n.key)) lbl.textContent=String(n.key);
+    }
+    const st=el.querySelector('.stamp'); if(st) st.textContent=rangeStr(p);
+    if(p.pid){
+      if(!b.eEls.get(id)){
+        const ed=mkEdgeEl(id,L.pos.get(p.pid),p,enter);
+        b.edgesG.appendChild(ed); b.eEls.set(id,ed);
+      }
+    } else {
+      const ed=b.eEls.get(id);
+      if(ed){ ed.classList.add('bye'); setTimeout(()=>ed.remove(),500); b.eEls.delete(id); }
+    }
+  }
+  for(const [id,el] of Array.from(b.els)){
+    if(!L.pos.has(id)){
+      el.classList.add('bye'); setTimeout(()=>el.remove(),500);
+      b.els.delete(id); b.cur.delete(id);
+      const ed=b.eEls.get(id);
+      if(ed){ ed.classList.add('bye'); setTimeout(()=>ed.remove(),500); b.eEls.delete(id); }
+    }
+  }
+  const from=new Map();
+  b.cur.forEach((v,id)=>{ if(L.pos.has(id)) from.set(id,{x:v.x,y:v.y}); });
+  cancelAnimationFrame(b.raf);
+  const dur=(animate&&!RM)?460:0, t0=performance.now();
+  const frame=t=>{
+    const k=dur?Math.min(1,(t-t0)/dur):1;
+    const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    b.els.forEach((el,id)=>{
+      const to=L.pos.get(id), f=from.get(id);
+      const x=f?f.x+(to.x-f.x)*e:to.x, y=f?f.y+(to.y-f.y)*e:to.y;
+      el.setAttribute('transform','translate('+x.toFixed(1)+','+y.toFixed(1)+')');
+      b.cur.set(id,{x:x,y:y});
+    });
+    b.eEls.forEach((ed,id)=>{
+      const pid=L.pos.get(id).pid; if(!pid) return;
+      const cp=b.cur.get(id), pp=b.cur.get(pid);
+      if(pp) ed.setAttribute('d',edgeD(pp,cp));
+    });
+    if(k<1) b.raf=requestAnimationFrame(frame);
+  };
+  b.raf=requestAnimationFrame(frame);
+}
+function syncAll(animate){
+  const L=layout();
+  syncBoard(BRD,L,animate,false);
+  syncBoard(PLB,L,animate,false);
+}
+function rebuildBoards(fancy){
+  [BRD,PLB].forEach(b=>{
+    b.svg.classList.remove('grown','entering','settled','show-ranges','show-orders','emph-guides');
+    b.nodesG.innerHTML=''; b.edgesG.innerHTML=''; b.fx.innerHTML='';
+    b.els.clear(); b.eEls.clear(); b.cur.clear(); cancelAnimationFrame(b.raf);
+  });
+  const L=layout();
+  syncBoard(BRD,L,false,fancy); syncBoard(PLB,L,false,fancy);
+  if(fancy){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      [BRD,PLB].forEach(b=>b.svg.classList.add('grown','entering'));
+      setTimeout(()=>[BRD,PLB].forEach(b=>{ b.svg.classList.remove('entering'); b.svg.classList.add('settled'); }),1900);
+    }));
+  } else {
+    [BRD,PLB].forEach(b=>b.svg.classList.add('grown','settled'));
+  }
+}
+
+/* ================= highlight helpers ================= */
+const HLLIST='hl-selected hl-path hl-min hl-max hl-child cur visited dim pulse swap'.split(' ');
+function clearBoard(b){
+  b.svg.classList.remove('show-ranges','show-orders','emph-guides');
+  b.els.forEach(el=>el.classList.remove(...HLLIST));
+  b.eEls.forEach(el=>el.classList.remove('hl-path','hl-min','hl-max','dim'));
+  b.fx.innerHTML='';
+}
+function nhl(b,id,cls){ const el=b.els.get(id); if(el) el.classList.add(cls); }
+function ehl(b,id,cls){ const el=b.eEls.get(id); if(el) el.classList.add(cls); }
+function ghost(b,x,y,label,ttl){
+  const g=document.createElementNS(NS,'g');
+  g.setAttribute('class','ghost'); g.setAttribute('transform','translate('+x+','+y+')');
+  g.innerHTML='<circle r="16"/><text y="4.5">'+label+'</text>';
+  b.fx.appendChild(g);
+  setTimeout(()=>{ g.classList.add('bye'); setTimeout(()=>g.remove(),450); },ttl);
+}
+
+/* ================= DOM refs ================= */
+const BRD=makeBoard('#specWrap',true);
+const PLB=makeBoard('#playWrap',false);
+const capBar=document.getElementById('capBar');
+const capEl=document.getElementById('capText');
+const clearBtn=document.getElementById('clearBtn');
+const insp=document.getElementById('inspector');
+const opsBench=document.getElementById('opsBench');
+const keyIn=document.getElementById('keyIn');
+const restoreBtn=document.getElementById('restoreBtn');
+const mastMeta=document.getElementById('mastMeta');
+const recapBody=document.getElementById('recapBody');
+const pCap=document.getElementById('pCap');
+const outStrip=document.getElementById('outStrip');
+const mechStrip=document.getElementById('mechStrip');
+const mechTag=document.getElementById('mechTag');
+const playBtn=document.getElementById('playBtn');
+const stepBtn=document.getElementById('stepBtn');
+const pResetBtn=document.getElementById('pResetBtn');
+const speedBtn=document.getElementById('speedBtn');
+const tabs=Array.from(document.querySelectorAll('.tab'));
+let capT=null;
+
+/* ================= specimen caption & inspector ================= */
+function setCap(text,pulse){
+  capEl.textContent=text; clearBtn.hidden=false;
+  if(pulse){
+    capBar.classList.remove('pulse'); void capBar.offsetWidth; capBar.classList.add('pulse');
+    clearTimeout(capT); capT=setTimeout(()=>capBar.classList.remove('pulse'),950);
+  }
+}
+function capIdle(){
+  const L=layout();
+  capEl.textContent='The '+(mutated?'edited':'founding')+' specimen — '+L.n+' keys'+(mutated?'':' (planted in insertion order 50 · 30 · 70 · 20 · 40 · 60 · 80 · 35 · 45)')+'. Click a node; search, graft, or prune from the bench.';
+  clearBtn.hidden=true;
+}
+const row=(k,v)=>'<div class="kv"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';
+function inspIdle(){
+  const L=layout();
+  return '<div class="insp-tag">Specimen record</div>'+
+    '<h3 class="insp-h">'+(mutated?'Your edited specimen':'The founding specimen')+'<em>'+(mutated?'pruned &amp; grafted by you':'planted by insertion')+'</em></h3>'+
+    '<p class="insp-note">Click any node on the specimen to read its record — or use the bench to search, graft, or prune.</p>'+
+    row('nodes',L.n)+
+    row('height',L.h)+
+    row('min · max',minNode(root).key+' · '+maxNode(root).key)+
+    row('insertion order',mutated?'edited since planting':FOUNDING.join(' · '))+
+    row('inorder','<span class="mut">revealed in Part II — the reading bench</span>');
+}
+function inspNode(id){
+  const n=nodes[id]; if(!n) return inspIdle();
+  const L=layout(); const p=L.pos.get(id);
+  const size=sizeOf(n);
+  const chip=nd=>nd?'<button class="chip" data-node="'+nd.id+'" type="button">'+nd.key+'</button>':'<span class="none">∅</span>';
+  const role=n===root?'root of the specimen':(!n.l&&!n.r?'leaf · external node':'internal node');
+  const rel=p.pid?' · '+(n===nodes[p.pid].l?'left':'right')+' child of '+nodes[p.pid].key:'';
+  return '<div class="insp-tag">Node record</div>'+
+    '<div class="node-head"><span class="node-dot">'+n.key+'</span><span class="node-role">'+role+rel+'</span></div>'+
+    row('depth',p.d)+
+    row('height',nodeHeight(n)+(!n.l&&!n.r?' <span class="mut">— it is a leaf</span>':''))+
+    row('interval',(p.lo===null?'−∞':p.lo)+' &lt; k &lt; '+(p.hi===null?'+∞':p.hi)+
+      (n===root?' <span class="mut">— the root rules everything</span>':''))+
+    row('left · right',chip(n.l)+' · '+chip(n.r))+
+    row('subtree',size+' key'+(size>1?'s':'')+(size>1?' <span class="mut">— all inside ('+(p.lo===null?'−∞':p.lo)+', '+(p.hi===null?'+∞':p.hi)+')</span>':''))+
+    row('parent',p.pid?chip(nodes[p.pid]):'<span class="none">none — it is the root</span>')+
+    '<button class="delbtn" data-del="'+id+'" type="button">prune this node — deletion, live</button>';
+}
+function clearSpecimen(){ clearBoard(BRD); capIdle(); insp.innerHTML=inspIdle(); }
+function selectNode(id){
+  const n=nodes[id]; if(!n||busy) return;
+  clearBoard(BRD);
+  const L=layout(); const p=L.pos.get(id); if(!p) return;
+  nhl(BRD,id,'hl-selected');
+  let cur=id;
+  while(L.pos.get(cur).pid){
+    const pa=L.pos.get(cur).pid;
+    nhl(BRD,pa,'hl-path'); ehl(BRD,pa,'hl-path');
+    cur=pa;
+  }
+  if(n.l) nhl(BRD,n.l.id,'hl-child');
+  if(n.r) nhl(BRD,n.r.id,'hl-child');
+  setCap('key '+n.key+' — depth '+p.d+', interval '+rangeStr(p)+'. Full record in the panel.');
+  insp.innerHTML=inspNode(id);
+}
+
+/* ================= live operations ================= */
+function setBusy(v){ busy=v; opsBench.classList.toggle('busy',v); }
+function onStateChange(){
+  refreshLive(); renderRecap();
+  restoreBtn.hidden=!mutated;
+  resetPlayer();
+  insp.innerHTML=inspIdle();
+}
+async function animateSearch(key){
+  if(busy) return;
+  busy=true; setBusy(true); clearBoard(BRD);
+  const w=findWalk(key); const steps=w.steps;
+  for(let i=0;i<steps.length;i++){
+    const s=steps[i], last=(i===steps.length-1);
+    if(w.found&&last){
+      nhl(BRD,s.id,'hl-selected');
+      const el=BRD.els.get(s.id);
+      if(el){ el.classList.add('pulse'); setTimeout(()=>el.classList.remove('pulse'),700); }
+      setCap(key+' = '+s.key+' — found after '+steps.length+' comparison'+(steps.length>1?'s':'')+': one per level walked. Cost = path length.');
+    } else {
+      nhl(BRD,s.id,'hl-path'); ehl(BRD,s.id,'hl-path');
+      setCap(key+' '+(key<s.key?'&lt;':'&gt;')+' '+s.key+' → descend '+(key<s.key?'left':'right'));
+    }
+    await sleep(RM?250:820);
+  }
+  if(!w.found){
+    const lastN=steps[steps.length-1]; const dir=key<lastN.key?'left':'right';
+    const p=layout().pos.get(lastN.id);
+    ghost(BRD,p.x+(dir==='left'?-44:44),p.y+60,'∅',2400);
+    setCap(key+': the walk runs out of tree — an empty pointer where a child would be. '+key+' does not grow here. Cost: '+steps.length+' comparisons — and an insert would graft exactly here.');
+  }
+  busy=false; setBusy(false);
+}
+async function animateInsert(key){
+  if(busy) return;
+  busy=true; setBusy(true); clearBoard(BRD);
+  const w=findWalk(key); const steps=w.steps;
+  for(const s of steps){
+    nhl(BRD,s.id,'hl-path'); ehl(BRD,s.id,'hl-path');
+    setCap(key+' '+(key<s.key?'&lt;':'&gt;')+' '+s.key+' → '+(key<s.key?'left':'right')+' — the hunt for a grafting spot is the same search');
+    await sleep(RM?220:640);
+  }
+  const lastN=steps[steps.length-1]; const dir=key<lastN.key?'left':'right';
+  const p=layout().pos.get(lastN.id);
+  ghost(BRD,p.x+(dir==='left'?-44:44),p.y+60,String(key),1700);
+  setCap('the search dies at '+lastN.key+'’s empty '+dir+' pointer — the grafting point.');
+  await sleep(RM?300:900);
+  insertPlain(key); mutated=true;
+  onStateChange(); syncAll(true);
+  setCap(key+' is grafted as '+lastN.key+'’s '+dir+' child — a leaf by construction. The interval it inherits proves the law survives.');
+  busy=false; setBusy(false);
+}
+async function animateDelete(id){
+  if(busy) return;
+  const n=nodes[id]; if(!n) return;
+  if(layout().n<=1){ setCap('the specimen keeps at least its root — a field guide needs something to point at.',true); return; }
+  busy=true; setBusy(true); clearBoard(BRD);
+  if(!n.l&&!n.r){
+    nhl(BRD,id,'hl-selected');
+    setCap(n.key+' is a leaf — case 1, the easy one: detach it and nothing above notices.');
+    await sleep(RM?350:1050);
+    deleteKey(n.key);
+  } else if(n.l&&n.r){
+    nhl(BRD,id,'hl-selected');
+    setCap(n.key+' has two children — case 3, the subtle one. No splice works; borrow the inorder successor.');
+    await sleep(RM?400:1200);
+    let s=n.r; const spine=[s];
+    while(s.l){ s=s.l; spine.push(s); }
+    for(const x of spine){
+      nhl(BRD,x.id,'hl-path'); ehl(BRD,x.id,'hl-path');
+      setCap('into the right subtree, always left: '+x.key+'…');
+      await sleep(RM?200:560);
+    }
+    setCap('the successor: '+s.key+' — the smallest key in '+n.key+'’s right subtree, the next key in sorted order. It has no left child, so pruning it is easy.');
+    await sleep(RM?450:1350);
+    deleteKey(n.key);
+    [BRD,PLB].forEach(b=>{
+      const el=b.els.get(id);
+      if(el){ el.classList.add('swap'); setTimeout(()=>el.classList.remove('swap'),650); }
+    });
+  } else {
+    const ch=n.l||n.r;
+    nhl(BRD,id,'hl-selected'); nhl(BRD,ch.id,'hl-min');
+    setCap(n.key+' has one child — case 2: '+ch.key+' is promoted into the vacancy, subtree and all.');
+    await sleep(RM?400:1150);
+    deleteKey(n.key);
+  }
+  mutated=true;
+  onStateChange(); syncAll(true);
+  setCap('pruned. Check any node’s interval — the law still holds everywhere.');
+  busy=false; setBusy(false);
+}
+
+/* ================= demos ================= */
+function demoRanges(){
+  clearBoard(BRD); BRD.svg.classList.add('show-ranges');
+  setCap('The law, drawn: every node carries the interval its key must satisfy, inherited from its ancestors — the root rules (−∞, +∞) and each descent narrows it. Click a node to isolate its interval.');
+}
+function demoExtrema(){
+  clearBoard(BRD);
+  let cur=root;
+  while(cur){ nhl(BRD,cur.id,'hl-min'); ehl(BRD,cur.id,'hl-min'); cur=cur.l; }
+  cur=root;
+  while(cur){ nhl(BRD,cur.id,'hl-max'); ehl(BRD,cur.id,'hl-max'); cur=cur.r; }
+  nhl(BRD,root.id,'hl-selected');
+  setCap('Minimum = follow left hands to the end ('+minNode(root).key+'); maximum = right ('+maxNode(root).key+'). Two spines, each ≤ h+1 steps — the tree’s extremes live at its tips.');
+}
+function demoHeight(){
+  clearBoard(BRD); BRD.svg.classList.add('emph-guides');
+  const path=longestPath();
+  path.forEach((n,i)=>{ nhl(BRD,n.id,i===path.length-1?'hl-selected':'hl-path'); if(i>0) ehl(BRD,n.id,'hl-path'); });
+  const L=layout(); const fl=Math.floor(Math.log2(L.n));
+  setCap('The longest root-to-leaf path — h = '+L.h+' edges. Every operation pays for one path, so h sets the price of everything. With '+L.n+' keys, ⌊log₂ '+L.n+'⌋ = '+fl+(L.h===fl?' — this specimen sits as low as it can.':' — taller than it needs to be (see entry 06).'));
+}
+function silentReset(){ founding(); rebuildBoards(false); onStateChange(); capIdle(); }
+function resetFounding(){ founding(); rebuildBoards(true); onStateChange(); capIdle(); }
+async function demoInsert(){
+  if(mutated){ silentReset(); await sleep(RM?200:500); }
+  await animateInsert(55);
+}
+async function demoDelete(){
+  if(mutated){ silentReset(); await sleep(RM?250:600); }
+  await animateDelete(root.id);
+}
+const DEMOS={ ranges:demoRanges, search:()=>animateSearch(45), extrema:demoExtrema,
+  insert:demoInsert, delete:demoDelete, height:demoHeight };
+
+/* ================= bench ================= */
+function readKey(){
+  const v=keyIn.value.trim(), k=Number(v);
+  if(v===''||!Number.isInteger(k)){ setCap('enter a whole key, 0–99 — the circles hold two digits.',true); return null; }
+  if(k<0||k>99){ setCap('keys run 0–99 on this sheet.',true); return null; }
+  return k;
+}
+opsBench.addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b||busy) return;
+  const pre=b.dataset.preset, op=b.dataset.op;
+  if(op==='minmax') return demoExtrema();
+  if(op==='restore') return resetFounding();
+  let k=null, mode=null;
+  if(pre){ k=pre==='s45'?45:pre==='s65'?65:55; mode=pre[0]==='s'?'search':'insert'; keyIn.value=k; }
+  else if(op==='search'||op==='insert'){ mode=op; k=readKey(); if(k===null) return; }
+  if(mode==='search') return animateSearch(k);
+  const w=findWalk(k);
+  if(w.found){ setCap(k+' already grows here — this sheet’s specimens keep distinct keys. Locating it:',true); return animateSearch(k); }
+  if(layout().n>=MAXN) return setCap('the field pot holds '+MAXN+' nodes — restore the specimen to graft anew.',true);
+  if(w.steps.length>MAXD) return setCap('that graft would sink below level '+MAXD+' — the pot is shallow. Restore to try another.',true);
+  animateInsert(k);
+});
+keyIn.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    e.preventDefault(); if(busy) return;
+    const k=readKey(); if(k!==null) animateSearch(k);
+  }
+});
+restoreBtn.addEventListener('click',()=>{ if(!busy) resetFounding(); });
+clearBtn.addEventListener('click',()=>{ if(!busy) clearSpecimen(); });
+BRD.svg.addEventListener('click',e=>{
+  if(busy) return;
+  const g=e.target.closest('.n');
+  if(g) selectNode(g.dataset.id); else clearSpecimen();
+});
+BRD.svg.addEventListener('keydown',e=>{
+  if(busy) return;
+  if(e.key==='Escape'){ clearSpecimen(); return; }
+  const g=e.target.closest('.n');
+  if(g&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); selectNode(g.dataset.id); }
+});
+insp.addEventListener('click',e=>{
+  if(busy) return;
+  const c=e.target.closest('.chip');
+  if(c){ selectNode(c.dataset.node); return; }
+  const d=e.target.closest('.delbtn');
+  if(d) animateDelete(d.dataset.del);
+});
+
+/* ================= the reading bench (player) ================= */
+const PL={mode:'in',ev:[],i:0,vc:0,total:0,playing:false,timer:null,speed:1,cur:null};
+const MDTXT={
+  pre:['call stack · returns from the right','preorder — node, left, right. Press play: every visit stamps its number and emits its key.'],
+  in:['call stack · returns from the right','inorder — left, node, right. On a BST, watch what the output becomes.'],
+  post:['call stack · returns from the right','postorder — left, right, node — children before parent.'],
+  lvl:['queue · dequeued from the left','level-order — row by row, driven by a queue. Watch the strip beneath.']
+};
+const FIN={
+  pre:'Done — feed this sequence into an empty BST and the same tree regrows: preorder is a build order.',
+  in:'Done — ascending. The BST property, read aloud: inorder of a search tree is sorted output.',
+  post:'Done — children before parents: free the nodes in this order and nothing loses a subtree it still needs.',
+  lvl:'Done — every level read left to right: the queue’s FIFO order becomes breadth order.'
+};
+const DELAY={root:520,at:620,visit:600,null:300,up:430,enq:330};
+const SPEEDS=[1,2,0.5], SPEEDLBL=['1×','2×','½×'];
+function setPCap(t){ pCap.textContent=t; }
+function genEvents(mode){
+  const L=layout(); const ev=[];
+  if(mode==='lvl'){
+    ev.push({t:'root',n:root});
+    const q=[root];
+    while(q.length){
+      const n=q.shift(); ev.push({t:'at',n});
+      if(n.l){ ev.push({t:'enq',n:n.l}); q.push(n.l); }
+      if(n.r){ ev.push({t:'enq',n:n.r}); q.push(n.r); }
+    }
+    return ev;
+  }
+  (function rec(n,p,side){
+    if(!n){
+      const pp=L.pos.get(p.id);
+      ev.push({t:'null',at:{x:pp.x+(side==='l'?-44:44),y:pp.y+60}});
+      return;
+    }
+    ev.push({t:'at',n});
+    if(mode==='pre') ev.push({t:'visit',n});
+    rec(n.l,n,'l');
+    if(mode==='in') ev.push({t:'visit',n});
+    rec(n.r,n,'r');
+    if(mode==='post') ev.push({t:'visit',n});
+    ev.push({t:'up',n});
+  })(root,null,null);
+  return ev;
+}
+function mechPush(k){
+  const ph=mechStrip.querySelector('.mech-empty'); if(ph) ph.remove();
+  const d=document.createElement('span'); d.className='mchip new'; d.textContent=k;
+  mechStrip.appendChild(d);
+}
+function mechDrop(first){
+  const c=mechStrip.querySelector(first?'.mchip:first-child':'.mchip:last-child');
+  if(c){ c.classList.add('gone'); setTimeout(()=>c.remove(),300); }
+  setTimeout(()=>{
+    if(!mechStrip.querySelector('.mchip')&&!mechStrip.querySelector('.gone'))
+      mechStrip.innerHTML='<span class="mech-empty">empty</span>';
+  },330);
+}
+function outPush(k){
+  const ph=outStrip.querySelector('.mech-empty'); if(ph) ph.remove();
+  const d=document.createElement('span'); d.className='kchip new'; d.textContent=k;
+  outStrip.appendChild(d);
+}
+function setCur(n){
+  if(PL.cur) PL.cur.classList.remove('cur');
+  const el=PLB.els.get(n.id);
+  if(el){ el.classList.add('cur'); PL.cur=el; }
+}
+function suf(n){ const s=['th','st','nd','rd'], v=n%100; return s[(v-20)%10]||s[v]||s[0]; }
+function applyEvent(e){
+  const m=PL.mode;
+  if(e.t==='root'){ mechPush(root.key); setPCap('enqueue the root — '+root.key+' starts the reading.'); return; }
+  if(e.t==='at'){
+    setCur(e.n);
+    if(m==='lvl'){ mechDrop(true); setPCap('dequeue '+e.n.key+' — visit it, then enqueue its children.'); }
+    else {
+      mechPush(e.n.key);
+      setPCap(m==='pre'?'arrive at '+e.n.key+' — visit it now, before descending'
+        :m==='in'?'arrive at '+e.n.key+' — its left subtree is read first'
+        :'arrive at '+e.n.key+' — left subtree, then right, then the node');
+    }
+    return;
+  }
+  if(e.t==='visit'){
+    const el=PLB.els.get(e.n.id);
+    if(el){ el.classList.add('visited'); el.querySelector('.badge text').textContent=String(++PL.vc); }
+    PLB.svg.classList.add('show-orders');
+    outPush(e.n.key);
+    setPCap('emit '+e.n.key+' — '+PL.vc+suf(PL.vc)+' of '+PL.total+'.');
+    return;
+  }
+  if(e.t==='null'){ ghost(PLB,e.at.x,e.at.y,'∅',850); setPCap('∅ — an empty pointer; the call returns at once.'); return; }
+  if(e.t==='up'){
+    mechDrop(false);
+    setPCap(m==='pre'?e.n.key+'’s subtrees are both read — return'
+      :m==='in'?e.n.key+'’s right subtree is read — return'
+      :e.n.key+'’s children are both read — return');
+    return;
+  }
+  if(e.t==='enq'){ mechPush(e.n.key); setPCap('enqueue '+e.n.key+' — it waits its turn.'); return; }
+}
+function ensureEv(){ if(!PL.ev.length){ PL.ev=genEvents(PL.mode); PL.total=layout().n; } }
+function pause(){
+  if(PL.playing){ PL.playing=false; clearTimeout(PL.timer); playBtn.textContent='play'; }
+}
+function resetPlayer(){
+  pause();
+  PL.ev=[]; PL.i=0; PL.vc=0; PL.cur=null;
+  clearBoard(PLB);
+  outStrip.classList.remove('golden');
+  outStrip.innerHTML='<span class="mech-empty">nothing yet — the reading hasn’t begun</span>';
+  mechStrip.innerHTML='<span class="mech-empty">empty</span>';
+  setPCap(MDTXT[PL.mode][1]);
+}
+function finish(){
+  PL.playing=false; clearTimeout(PL.timer); playBtn.textContent='play';
+  if(PL.cur){ PL.cur.classList.remove('cur'); PL.cur=null; }
+  if(PL.mode==='in'){
+    outStrip.classList.add('golden');
+    const s=document.createElement('span'); s.className='sortedb'; s.textContent='sorted ↑';
+    outStrip.appendChild(s);
+  }
+  setPCap(FIN[PL.mode]);
+}
+function tick(){
+  if(!PL.playing) return;
+  if(PL.i>=PL.ev.length){ finish(); return; }
+  const e=PL.ev[PL.i++];
+  applyEvent(e);
+  PL.timer=setTimeout(tick,DELAY[e.t]/PL.speed);
+}
+function togglePlay(){
+  if(PL.playing){ pause(); setPCap('paused — step through, or press play to continue.'); return; }
+  ensureEv();
+  if(PL.i>=PL.ev.length){ resetPlayer(); ensureEv(); }
+  PL.playing=true; playBtn.textContent='pause';
+  tick();
+}
+function doStep(){
+  if(PL.playing) pause();
+  ensureEv();
+  if(PL.i>=PL.ev.length){ setPCap('the reading is over — reset to run it again.'); return; }
+  applyEvent(PL.ev[PL.i++]);
+}
+function setMode(m){
+  pause(); PL.mode=m;
+  tabs.forEach(t=>t.setAttribute('aria-pressed',String(t.dataset.mode===m)));
+  mechTag.textContent=MDTXT[m][0];
+  resetPlayer();
+  PLB.svg.classList.toggle('emph-guides',m==='lvl');
+  setPCap(MDTXT[m][1]);
+}
+tabs.forEach(t=>t.addEventListener('click',()=>{ if(!busy) setMode(t.dataset.mode); }));
+playBtn.addEventListener('click',()=>{ if(!busy) togglePlay(); });
+stepBtn.addEventListener('click',()=>{ if(!busy) doStep(); });
+pResetBtn.addEventListener('click',()=>{ if(!busy) resetPlayer(); });
+let spdI=0;
+speedBtn.addEventListener('click',()=>{ spdI=(spdI+1)%SPEEDS.length; PL.speed=SPEEDS[spdI]; speedBtn.textContent=SPEEDLBL[spdI]; });
+
+/* ================= entry buttons ================= */
+document.querySelectorAll('[data-demo]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    if(busy) return;
+    document.getElementById('specimen').scrollIntoView({behavior:'smooth',block:'center'});
+    const f=DEMOS[b.dataset.demo]; if(f) f();
+  });
+});
+document.querySelectorAll('[data-play]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    if(busy) return;
+    document.getElementById('bench').scrollIntoView({behavior:'smooth',block:'center'});
+    setMode(b.dataset.play);
+    setTimeout(()=>togglePlay(),450);
+  });
+});
+
+/* ================= static minis ================= */
+function T(k,l,r){ return {k:k,l:l||null,r:r||null}; }
+const MINI={
+  property:{t:()=>SNAP,cfg:{ranges:true}},
+  search:{t:()=>SNAP,cfg:{hl:{50:'hl-path',30:'hl-path',40:'hl-path',45:'hl-selected'},ehl:{30:'hl-path',40:'hl-path',45:'hl-path'}}},
+  extrema:{t:()=>SNAP,cfg:{hl:{50:'hl-selected',30:'hl-min',20:'hl-min',70:'hl-max',80:'hl-max'},ehl:{30:'hl-min',20:'hl-min',70:'hl-max',80:'hl-max'}}},
+  insert:{t:()=>SNAP,cfg:{hl:{50:'hl-path',70:'hl-path',60:'hl-path'},ehl:{70:'hl-path',60:'hl-path'},ghost:{pk:60,side:'l',label:'55'}}},
+  del1:{t:()=>T(50,T(30),T(70)),cfg:{hl:{30:'hl-selected'}}},
+  del2:{t:()=>T(50,T(30,T(20)),T(70)),cfg:{hl:{30:'hl-selected',20:'hl-min'}}},
+  del3:{t:()=>SNAP,cfg:{hl:{50:'hl-selected',60:'hl-path'},ehl:{60:'hl-path'},stamps:{60:'successor'}}},
+  bal:{t:()=>T(40,T(20,T(10),T(30)),T(60,T(50))),cfg:{}},
+  chain:{t:()=>T(10,null,T(20,null,T(30,null,T(40,null,T(50,null,T(60)))))),cfg:{}},
+  pre:{t:()=>SNAP,cfg:{order:'pre'}},
+  in:{t:()=>SNAP,cfg:{order:'in'}},
+  post:{t:()=>SNAP,cfg:{order:'post'}},
+  lvl:{t:()=>SNAP,cfg:{order:'lvl',guides:true}}
+};
+function miniSVG(t,cfg){
+  const MLH=64;
+  const pos=new Map(); let i=0,h=0;
+  (function rec(n,d,pk){ if(!n) return; rec(n.l,d+1,n.k);
+    pos.set(n.k,{i:i++,d:d,pk:pk}); if(d>h)h=d; rec(n.r,d+1,n.k); })(t,0,null);
+  const n=i, gap=n>1?Math.min(150,(VW-2*X0)/(n-1)):0, x0=(VW-gap*(n-1))/2;
+  pos.forEach(p=>{ p.x=n>1?x0+p.i*gap:VW/2; p.y=58+p.d*MLH; });
+  const vh=58+h*MLH+((cfg.ranges||cfg.stamps)?58:46);
+  let rng=null;
+  if(cfg.ranges){
+    rng=new Map();
+    (function rec2(nn,lo,hi){ if(!nn)return; rng.set(nn.k,[lo,hi]); rec2(nn.l,lo,nn.k); rec2(nn.r,nn.k,hi); })(t,null,null);
+  }
+  let ord=null;
+  if(cfg.order){
+    ord=new Map(); let c=0;
+    if(cfg.order==='lvl'){ const q=[t]; while(q.length){ const m=q.shift(); ord.set(m.k,++c); if(m.l)q.push(m.l); if(m.r)q.push(m.r); } }
+    else (function rec3(m){ if(!m)return; if(cfg.order==='pre')ord.set(m.k,++c); rec3(m.l); if(cfg.order==='in')ord.set(m.k,++c); rec3(m.r); if(cfg.order==='post')ord.set(m.k,++c); })(t);
+  }
+  let g='';
+  if(cfg.guides){ for(let d=0;d<=h;d++){ const y=58+d*MLH;
+    g+='<line class="guide" x1="26" x2="588" y1="'+y+'" y2="'+y+'"/><text class="gl" x="598" y="'+(y+4)+'">lvl '+d+'</text>'; } }
+  let edges='', nodes='';
+  for(const [k,p] of pos){
+    const cls=(cfg.hl&&cfg.hl[k])?' '+cfg.hl[k]:'';
+    const stamp=cfg.ranges?('('+((rng.get(k)[0]===null)?'−∞':rng.get(k)[0])+', '+((rng.get(k)[1]===null)?'+∞':rng.get(k)[1])+')')
+      :((cfg.stamps&&cfg.stamps[k])?cfg.stamps[k]:'');
+    const badge=ord?'<g class="badge"><circle cx="20" cy="-20" r="10.5"/><text x="20" y="-16.6">'+ord.get(k)+'</text></g>':'';
+    nodes+='<g class="n'+cls+'" transform="translate('+p.x+','+p.y+')"><g class="core"><circle class="ring" r="27"/><circle class="face" r="21"/><text class="lbl" y="7.5">'+k+'</text></g>'+badge+(stamp?'<text class="stamp" y="37">'+stamp+'</text>':'')+'</g>';
+    if(p.pk){
+      const pp=pos.get(p.pk); const ecl=(cfg.ehl&&cfg.ehl[k])?' '+cfg.ehl[k]:'';
+      edges+='<path class="edge'+ecl+'" pathLength="1" d="'+edgeD(pp,p)+'"/>';
+    }
+  }
+  let gh='';
+  if(cfg.ghost){
+    const pp=pos.get(cfg.ghost.pk);
+    const gx=pp.x+(cfg.ghost.side==='l'?-44:44), gy=pp.y+60;
+    gh='<g class="ghost" transform="translate('+gx+','+gy+')"><circle r="16"/><text y="4.5">'+cfg.ghost.label+'</text></g>';
+  }
+  return '<svg viewBox="0 0 '+VW+' '+vh+'" class="tree mini grown settled'+(cfg.guides?' emph-guides':'')+(ord?' show-orders':'')+'" aria-hidden="true"><g class="guides">'+g+'</g><g class="edges">'+edges+'</g><g class="nodes">'+nodes+'</g>'+gh+'</svg>';
+}
+
+/* ================= live values, recap, masthead ================= */
+function liveVal(k,L){
+  L=L||layout();
+  switch(k){
+    case 'n': return String(L.n);
+    case 'h': return String(L.h);
+    case 'h1': return String(L.h+1);
+    case 'min': return String(minNode(root).key);
+    case 'max': return String(maxNode(root).key);
+    case 'logn': return String(Math.floor(Math.log2(L.n)));
+    case 'check': return bstCheck();
+    case 'pre': case 'in': case 'post': case 'lvl': return seqOf(k).join(' · ');
+  }
+  return '';
+}
+function metaHTML(){
+  const L=layout();
+  return ['n = '+L.n+' nodes','height = '+L.h,'keys '+minNode(root).key+'–'+maxNode(root).key,'degree ≤ 2 · binary','inorder → sorted']
+    .map(s=>'<span>'+s+'</span>').join('<i>·</i>');
+}
+function refreshLive(){
+  document.querySelectorAll('[data-live]').forEach(el=>{ el.textContent=liveVal(el.dataset.live); });
+  mastMeta.innerHTML=metaHTML();
+}
+function renderRecap(){
+  const L=layout(); const fl=Math.floor(Math.log2(L.n));
+  const rows=[
+    ['BST property','whole subtrees ordered, not just immediate children',bstCheck()],
+    ['Search','compare &amp; descend — one subtree discarded per step','cost ≤ h+1 = '+(L.h+1)+' comparisons (h = '+L.h+')'],
+    ['Min · max','leftmost node · rightmost node',minNode(root).key+' · '+maxNode(root).key],
+    ['Insertion','graft a leaf where the search falls off',L.n+' keys — the newest is always a leaf'],
+    ['Deletion','leaf · one child · two children → inorder successor','prune any node from its record — try the root'],
+    ['Height &amp; balance','sets the cost of every operation','h = '+L.h+' · ⌊log₂ '+L.n+'⌋ = '+fl+(L.h===fl?' — as low as it can sit':' — taller than it needs')],
+    ['Traversal','visit every node exactly once','four canonical readings'],
+    ['Preorder · NLR','root first — a build order',seqOf('pre').join(' · ')],
+    ['Inorder · LNR','root in the middle — sorted on a BST',seqOf('in').join(' · ')+'  ↑'],
+    ['Postorder · LRN','root last — children before parent',seqOf('post').join(' · ')],
+    ['Level-order · BFS','row by row, driven by a queue',seqOf('lvl').join(' · ')]
+  ];
+  recapBody.innerHTML=rows.map(r=>'<tr><td class="rt">'+r[0]+'</td><td>'+r[1]+'</td><td class="rx">'+r[2]+'</td></tr>').join('');
+}
+
+/* ================= quiz ================= */
+const QUIZ=[
+  {s:'In a BST, every key in a node’s left subtree is smaller than the node’s key.',a:true,
+   why:'The law governs entire subtrees, not just immediate children — that is what lets search discard a whole subtree per comparison.'},
+  {s:'The inorder traversal of any binary tree produces its keys in sorted order.',a:false,
+   why:'Only for BSTs. Inorder is just a reading; the sorted output is the BST property showing through it.'},
+  {s:'Level-order traversal is naturally driven by a queue rather than recursion.',a:true,
+   why:'FIFO order becomes breadth order — dequeue a node, visit it, enqueue its children.'},
+  {s:'Inserting keys in sorted order into an empty BST produces a balanced tree.',a:false,
+   why:'It produces a chain — every key grafts onto the same side and the height grows to n−1. Sorted input is a BST’s poison.'},
+  {s:'Deleting a node with two children can be done by replacing its key with its inorder successor.',a:true,
+   why:'The successor — leftmost of the right subtree — keeps the order intact and has no left child, so pruning it is trivial. (The predecessor works too.)'}
+];
+const qWrap=document.getElementById('quizList');
+const qScore=document.getElementById('qScore');
+const qVerdict=document.getElementById('qVerdict');
+let answered=0, score=0;
+qWrap.innerHTML=QUIZ.map((q,i)=>'<div class="q"><p class="q-s"><span class="q-n">'+String(i+1).padStart(2,'0')+'</span>'+q.s+'</p>'+
+  '<div class="q-b"><button type="button" class="qb" data-v="1">true</button><button type="button" class="qb" data-v="0">false</button></div>'+
+  '<p class="q-why"></p></div>').join('');
+function updateScore(){
+  qScore.textContent='score '+score+' / '+answered+' of '+QUIZ.length+' answered'.replace(' of 5 answered',' — '+answered+' of 5 answered');
+  if(answered===QUIZ.length){
+    qVerdict.textContent=score>=4
+      ?'Field-ready — you could graft and prune this specimen unsupervised.'
+      :'Another pass through the entries will settle it.';
+    qVerdict.hidden=false;
+  }
+}
+qWrap.addEventListener('click',e=>{
+  const b=e.target.closest('.qb'); if(!b||b.disabled) return;
+  const q=b.closest('.q'); if(q.dataset.done) return;
+  q.dataset.done='1';
+  const i=Array.prototype.indexOf.call(qWrap.children,q);
+  const truth=QUIZ[i].a?1:0, val=+b.dataset.v;
+  b.classList.add(val===truth?'right':'wrong');
+  q.querySelectorAll('.qb').forEach(x=>x.disabled=true);
+  const why=q.querySelector('.q-why');
+  why.innerHTML=(val===truth?'<b>Correct.</b> ':'<b>Not quite.</b> ')+QUIZ[i].why;
+  why.classList.add('show');
+  answered++; if(val===truth) score++;
+  updateScore();
+});
+document.getElementById('qReset').addEventListener('click',()=>{
+  answered=0; score=0; qVerdict.hidden=true;
+  qWrap.querySelectorAll('.q').forEach(q=>{
+    delete q.dataset.done;
+    q.querySelectorAll('.qb').forEach(b=>{ b.disabled=false; b.classList.remove('right','wrong'); });
+    const w=q.querySelector('.q-why'); w.classList.remove('show'); w.innerHTML='';
+  });
+  qScore.textContent='0 of 5 answered';
+});
+
+/* ================= rail ================= */
+const railLinks=Array.from(document.querySelectorAll('.rail a'));
+const io=new IntersectionObserver(es=>{
+  es.forEach(en=>{ if(en.isIntersecting){
+    railLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+en.target.id));
+  }});
+},{rootMargin:'-35% 0px -60% 0px'});
+document.querySelectorAll('[data-rail]').forEach(s=>io.observe(s));
+
+/* ================= init ================= */
+founding();
+SNAP=snapshot(root);
+rebuildBoards(true);
+refreshLive(); renderRecap();
+capIdle();
+insp.innerHTML=inspIdle();
+resetPlayer();
+setMode('in');
+document.querySelectorAll('[data-mini]').forEach(fig=>{
+  const m=MINI[fig.dataset.mini]; if(!m) return;
+  fig.insertAdjacentHTML('afterbegin',miniSVG(m.t(),m.cfg));
+});
+})();
+</script>
+</body>
+</html>
